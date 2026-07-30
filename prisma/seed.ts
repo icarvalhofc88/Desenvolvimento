@@ -6,9 +6,10 @@ import bcrypt from "bcryptjs";
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const db = new PrismaClient({ adapter });
 
-// Este script cria a primeira conta de acesso (perfil DONO), usada para
-// entrar no sistema pela primeira vez. Depois disso, novos usuários são
-// criados pela própria tela de "Usuários" dentro do sistema.
+// Este script cria a primeira conta de acesso: o ADMIN_GERAL, dono da
+// plataforma. Essa conta não pertence a nenhuma loja — ela cadastra as
+// lojas (CNPJs clientes) pela tela /admin/lojas, e cada loja tem seus
+// próprios usuários (Dono, Gerente, etc), criados a partir dali.
 async function main() {
   const email = process.env.ADMIN_EMAIL;
   const senha = process.env.ADMIN_SENHA;
@@ -33,11 +34,11 @@ async function main() {
       nome,
       email,
       senhaHash,
-      perfil: "DONO",
+      perfil: "ADMIN_GERAL",
     },
   });
 
-  console.log(`Usuário dono criado: ${email}`);
+  console.log(`Usuário Admin Geral criado: ${email}`);
 }
 
 main()

@@ -13,16 +13,42 @@ datasource db {
 }
 
 // Perfis de acesso do sistema.
-// DONO e GERENTE enxergam tudo, incluindo financeiro e relatórios.
+// ADMIN_GERAL é exclusivo do dono da plataforma (não pertence a nenhuma loja,
+// gerencia todas as lojas/licenças e pode entrar em modo suporte).
+// Os demais perfis pertencem sempre a uma Loja (CNPJ) específica:
+// DONO e GERENTE enxergam tudo dentro da loja, incluindo financeiro.
 // CAIXA opera o PDV/fechamento de comandas.
 // GARCOM lança pedidos nas comandas pelo celular.
 // COZINHA acompanha o painel de pedidos.
 enum Perfil {
+  ADMIN_GERAL
   DONO
   GERENTE
   CAIXA
   GARCOM
   COZINHA
+}
+
+// Status da licença de uso de cada loja na plataforma.
+enum StatusLoja {
+  TESTE
+  ATIVA
+  SUSPENSA
+}
+
+// Cada Loja representa um CNPJ cliente da plataforma. Todo dado operacional
+// (produtos, estoque, comandas, vendas, financeiro) vai pertencer a uma Loja,
+// e nunca pode vazar de uma Loja para outra.
+model Loja {
+  id           String     @id @default(cuid())
+  nomeFantasia String
+  razaoSocial  String?
+  cnpj         String     @unique
+  status       StatusLoja @default(TESTE)
+  criadaEm     DateTime   @default(now())
+
+  usuarios       Usuario[]
+  acessosSuporte LogAcessoSuporte[]
 }
 
 model Usuario {
@@ -33,7 +59,29 @@ model Usuario {
   perfil    Perfil
   ativo     Boolean  @default(true)
   criadoEm  DateTime @default(now())
-  criadoPorId String?
-  criadoPor   Usuario?  @relation("UsuarioCriadoPor", fields: [criadoPorId], references: [id])
+
+  // Nula apenas para o(s) usuário(s) ADMIN_GERAL. Todo usuário de loja
+  // (DONO, GERENTE, CAIXA, GARCOM, COZINHA) deve ter uma lojaId.
+  lojaId String?
+  loja   Loja?   @relation(fields: [lojaId], references: [id])
+
+  criadoPorId     String?
+  criadoPor       Usuario?  @relation("UsuarioCriadoPor", fields: [criadoPorId], references: [id])
   usuariosCriados Usuario[] @relation("UsuarioCriadoPor")
+
+  acessosSuporteFeitos LogAcessoSuporte[] @relation("AdminQueAcessou")
+}
+
+// Registro de auditoria: toda vez que o Admin Geral entra em "modo suporte"
+// dentro de uma loja, fica registrado aqui (quem, qual loja, quando entrou
+// e quando saiu). Isso é parte da prestação de contas exigida pela LGPD.
+model LogAcessoSuporte {
+  id     String @id @default(cuid())
+  adminId String
+  admin   Usuario @relation("AdminQueAcessou", fields: [adminId], references: [id])
+  lojaId  String
+  loja    Loja    @relation(fields: [lojaId], references: [id])
+
+  iniciadoEm  DateTime  @default(now())
+  encerradoEm DateTime?
 }

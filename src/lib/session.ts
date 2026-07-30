@@ -19,6 +19,9 @@ export type SessionPayload = {
   usuarioId: string;
   nome: string;
   perfil: Perfil;
+  // Preenchido apenas quando o ADMIN_GERAL entra em "modo suporte" dentro
+  // de uma loja específica. Enquanto isso, ele age como Dono daquela loja.
+  contextoLojaId?: string;
 };
 
 // Transforma os dados da sessão em um token assinado (não pode ser
@@ -70,4 +73,18 @@ export async function lerSessao(): Promise<SessionPayload | null> {
 export async function encerrarSessao() {
   const cookieStore = await cookies();
   cookieStore.delete(NOME_COOKIE);
+}
+
+// Reemite a sessão trocando (ou removendo) o "contexto de loja" —
+// usado quando o Admin Geral entra ou sai do modo suporte.
+export async function definirContextoLoja(lojaId: string | undefined) {
+  const sessaoAtual = await lerSessao();
+  if (!sessaoAtual) return;
+
+  await criarSessao({
+    usuarioId: sessaoAtual.usuarioId,
+    nome: sessaoAtual.nome,
+    perfil: sessaoAtual.perfil,
+    contextoLojaId: lojaId,
+  });
 }

@@ -44,7 +44,9 @@ export async function login(
     perfil: usuario.perfil,
   });
 
-  redirect("/dashboard");
+  // O Admin Geral não pertence a nenhuma loja: a "página inicial" dele é a
+  // lista de lojas, não o painel operacional.
+  redirect(usuario.perfil === "ADMIN_GERAL" ? "/admin/lojas" : "/dashboard");
 }
 
 export async function logout() {

@@ -1,9 +1,12 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { obterUsuarioAtual } from "@/lib/dal";
+import { db } from "@/lib/db";
+import { obterContexto } from "@/lib/dal";
 import { logout } from "@/app/actions/auth";
+import { sairModoSuporte } from "@/app/actions/lojas";
 
 const NOME_PERFIL: Record<string, string> = {
+  ADMIN_GERAL: "Admin Geral",
   DONO: "Dono",
   GERENTE: "Gerente",
   CAIXA: "Caixa",
@@ -16,21 +19,44 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const usuario = await obterUsuarioAtual();
+  const contexto = await obterContexto();
 
-  if (!usuario) {
+  if (!contexto) {
     redirect("/login");
   }
 
+  if (!contexto.lojaId) {
+    redirect("/admin/lojas");
+  }
+
+  const loja = await db.loja.findUnique({
+    where: { id: contexto.lojaId },
+    select: { nomeFantasia: true },
+  });
+
   const podeGerenciarUsuarios =
-    usuario.perfil === "DONO" || usuario.perfil === "GERENTE";
+    contexto.perfilEfetivo === "DONO" || contexto.perfilEfetivo === "GERENTE";
 
   return (
     <div className="flex flex-1 flex-col">
+      {contexto.modoSuporte && (
+        <div className="flex items-center justify-between bg-amber-100 px-6 py-2 text-sm text-amber-900">
+          <span>
+            Modo suporte: você está operando dentro de{" "}
+            <strong>{loja?.nomeFantasia}</strong> como Admin Geral.
+          </span>
+          <form action={sairModoSuporte}>
+            <button type="submit" className="underline hover:no-underline">
+              Sair do modo suporte
+            </button>
+          </form>
+        </div>
+      )}
+
       <header className="flex items-center justify-between border-b border-zinc-200 bg-white px-6 py-3">
         <nav className="flex items-center gap-4">
           <Link href="/dashboard" className="font-semibold text-zinc-900">
-            Reserva 88
+            {loja?.nomeFantasia ?? "Reserva 88"}
           </Link>
           {podeGerenciarUsuarios && (
             <Link
@@ -44,19 +70,21 @@ export default async function DashboardLayout({
 
         <div className="flex items-center gap-3">
           <span className="text-sm text-zinc-600">
-            {usuario.nome}{" "}
+            {contexto.usuario.nome}{" "}
             <span className="text-zinc-400">
-              ({NOME_PERFIL[usuario.perfil] ?? usuario.perfil})
+              ({NOME_PERFIL[contexto.perfilEfetivo] ?? contexto.perfilEfetivo})
             </span>
           </span>
-          <form action={logout}>
-            <button
-              type="submit"
-              className="rounded-md border border-zinc-300 px-3 py-1 text-sm text-zinc-700 hover:bg-zinc-50"
-            >
-              Sair
-            </button>
-          </form>
+          {!contexto.modoSuporte && (
+            <form action={logout}>
+              <button
+                type="submit"
+                className="rounded-md border border-zinc-300 px-3 py-1 text-sm text-zinc-700 hover:bg-zinc-50"
+              >
+                Sair
+              </button>
+            </form>
+          )}
         </div>
       </header>
 

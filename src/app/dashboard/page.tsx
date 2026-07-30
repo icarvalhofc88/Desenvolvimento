@@ -1,4 +1,4 @@
-import { obterUsuarioAtual } from "@/lib/dal";
+import { obterContexto } from "@/lib/dal";
 
 const MODULOS_FUTUROS = [
   "Cadastro de produtos (categorias, variações e fichas técnicas)",
@@ -10,17 +10,17 @@ const MODULOS_FUTUROS = [
 ];
 
 export default async function DashboardPage() {
-  const usuario = await obterUsuarioAtual();
+  const contexto = await obterContexto();
 
   return (
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-2xl font-semibold text-zinc-900">
-          Bem-vindo, {usuario?.nome}
+          Bem-vindo, {contexto?.usuario.nome}
         </h1>
         <p className="text-sm text-zinc-500">
-          Esta é a primeira etapa do sistema: estrutura do projeto e login
-          com perfis de acesso.
+          Etapas concluídas: estrutura do projeto, login com perfis de acesso
+          e suporte a múltiplas lojas (multi-tenant).
         </p>
       </div>
 

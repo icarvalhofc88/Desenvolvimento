@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { exigirPerfil } from "@/lib/dal";
+import { exigirContextoLoja } from "@/lib/dal";
 import { db } from "@/lib/db";
 import { alternarAtivoUsuario } from "@/app/actions/usuarios";
 import { PERFIS } from "@/lib/definitions";
@@ -20,10 +20,11 @@ const NOME_PERFIL: Record<string, string> = {
 export default async function UsuariosPage() {
   // Checagem "de verdade": mesmo que alguém tente acessar esta URL direto,
   // sem passar pelos links da tela, esta linha barra quem não for
-  // dono/gerente.
-  const usuarioAtual = await exigirPerfil(["DONO", "GERENTE"]);
+  // dono/gerente — e garante que só vemos usuários da loja atual.
+  const contexto = await exigirContextoLoja(["DONO", "GERENTE"]);
 
   const usuarios = await db.usuario.findMany({
+    where: { lojaId: contexto.lojaId },
     orderBy: { criadoEm: "asc" },
     select: {
       id: true,
@@ -36,7 +37,7 @@ export default async function UsuariosPage() {
 
   // Gerente não pode criar contas de dono/gerente — só o próprio dono.
   const perfisDisponiveis =
-    usuarioAtual.perfil === "DONO"
+    contexto.perfilEfetivo === "DONO"
       ? PERFIS
       : PERFIS.filter((p) => p !== "DONO" && p !== "GERENTE");
 
@@ -87,7 +88,7 @@ export default async function UsuariosPage() {
                   </span>
                 </td>
                 <td className="px-4 py-2 text-right">
-                  {usuario.id !== usuarioAtual.id && (
+                  {usuario.id !== contexto.usuario.id && (
                     <form action={alternarAtivoUsuario.bind(null, usuario.id)}>
                       <button
                         type="submit"

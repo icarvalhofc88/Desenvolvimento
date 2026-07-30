@@ -3,18 +3,19 @@
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
-import { exigirPerfil } from "@/lib/dal";
+import { exigirContextoLoja } from "@/lib/dal";
 import {
   NovoUsuarioFormSchema,
   type NovoUsuarioFormState,
 } from "@/lib/definitions";
 
-// Só DONO e GERENTE podem cadastrar novos funcionários.
+// Só DONO e GERENTE podem cadastrar novos funcionários — sempre dentro da
+// loja em que estão operando no momento (contexto.lojaId).
 export async function criarUsuario(
   _estadoAnterior: NovoUsuarioFormState,
   formData: FormData
 ): Promise<NovoUsuarioFormState> {
-  const usuarioAtual = await exigirPerfil(["DONO", "GERENTE"]);
+  const contexto = await exigirContextoLoja(["DONO", "GERENTE"]);
 
   const validado = NovoUsuarioFormSchema.safeParse({
     nome: formData.get("nome"),
@@ -31,12 +32,13 @@ export async function criarUsuario(
 
   // Um GERENTE não pode criar outro DONO ou GERENTE — só o próprio DONO pode.
   if (
-    usuarioAtual.perfil === "GERENTE" &&
+    contexto.perfilEfetivo === "GERENTE" &&
     (perfil === "DONO" || perfil === "GERENTE")
   ) {
     return { erro: "Apenas o dono pode criar contas de dono ou gerente." };
   }
 
+  // E-mail é único em toda a plataforma, não só dentro da loja.
   const jaExiste = await db.usuario.findUnique({ where: { email } });
   if (jaExiste) {
     return { erros: { email: ["Já existe um usuário com este e-mail."] } };
@@ -50,7 +52,8 @@ export async function criarUsuario(
       email,
       senhaHash,
       perfil,
-      criadoPorId: usuarioAtual.id,
+      lojaId: contexto.lojaId,
+      criadoPorId: contexto.usuario.id,
     },
   });
 
@@ -61,16 +64,19 @@ export async function criarUsuario(
 // Ativa/desativa o acesso de um funcionário (em vez de excluir o cadastro,
 // o que preservaria o histórico de vendas/comandas ligado a ele).
 export async function alternarAtivoUsuario(usuarioId: string): Promise<void> {
-  const usuarioAtual = await exigirPerfil(["DONO", "GERENTE"]);
+  const contexto = await exigirContextoLoja(["DONO", "GERENTE"]);
 
   // A tela só mostra este botão para os outros usuários, mas confirmamos
   // aqui de novo por segurança (defesa em profundidade).
-  if (usuarioId === usuarioAtual.id) {
+  if (usuarioId === contexto.usuario.id) {
     return;
   }
 
   const usuario = await db.usuario.findUnique({ where: { id: usuarioId } });
-  if (!usuario) {
+
+  // Garante que ninguém consegue ativar/desativar um usuário de OUTRA loja
+  // adivinhando/forjando o id.
+  if (!usuario || usuario.lojaId !== contexto.lojaId) {
     return;
   }
 
