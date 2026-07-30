@@ -90,6 +90,7 @@ type ProdutoValidado = {
   unidadeMedida: string;
   vendavel: boolean;
   precoVenda: number | null | undefined;
+  estoqueMinimo: number;
   variacoes: { nome: string; precoVenda: number }[];
   itensFichaTecnica: { insumoId: string; quantidade: number }[];
 };
@@ -114,6 +115,7 @@ async function validarProduto(
     unidadeMedida,
     vendavel,
     precoVenda,
+    estoqueMinimo,
     variacoes,
     itensFichaTecnica,
   } = validado.data;
@@ -167,6 +169,7 @@ async function validarProduto(
       unidadeMedida,
       vendavel,
       precoVenda: variacoes.length > 0 ? null : precoVenda,
+      estoqueMinimo,
       variacoes,
       itensFichaTecnica,
     },
@@ -182,7 +185,7 @@ export async function criarProduto(
   if (resultado.erro) {
     return { erro: resultado.erro };
   }
-  const { nome, descricao, categoriaId, tipo, unidadeMedida, vendavel, precoVenda, variacoes, itensFichaTecnica } =
+  const { nome, descricao, categoriaId, tipo, unidadeMedida, vendavel, precoVenda, estoqueMinimo, variacoes, itensFichaTecnica } =
     resultado.dados!;
 
   const jaExiste = await db.produto.findFirst({
@@ -202,6 +205,7 @@ export async function criarProduto(
       unidadeMedida,
       vendavel,
       precoVenda,
+      estoqueMinimo,
       variacoes: { create: variacoes },
       itensFichaTecnica: {
         create: itensFichaTecnica.map((item) => ({
@@ -233,7 +237,7 @@ export async function atualizarProduto(
   if (resultado.erro) {
     return { erro: resultado.erro };
   }
-  const { nome, descricao, categoriaId, tipo, unidadeMedida, vendavel, precoVenda, variacoes, itensFichaTecnica } =
+  const { nome, descricao, categoriaId, tipo, unidadeMedida, vendavel, precoVenda, estoqueMinimo, variacoes, itensFichaTecnica } =
     resultado.dados!;
 
   const outroComMesmoNome = await db.produto.findFirst({
@@ -258,6 +262,7 @@ export async function atualizarProduto(
         unidadeMedida,
         vendavel,
         precoVenda,
+        estoqueMinimo,
         variacoes: { create: variacoes },
         itensFichaTecnica: {
           create: itensFichaTecnica.map((item) => ({

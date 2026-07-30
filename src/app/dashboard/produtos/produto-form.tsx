@@ -18,6 +18,7 @@ export type ProdutoFormValores = {
   unidadeMedida: string;
   vendavel: boolean;
   precoVenda: string;
+  estoqueMinimo: string;
   variacoes: VariacaoLinha[];
   itensFichaTecnica: ItemFichaLinha[];
 };
@@ -64,6 +65,9 @@ export function ProdutoForm({
   const [precoVenda, setPrecoVenda] = useState(
     valoresIniciais?.precoVenda ?? ""
   );
+  const [estoqueMinimo, setEstoqueMinimo] = useState(
+    valoresIniciais?.estoqueMinimo ?? "0"
+  );
   const [variacoes, setVariacoes] = useState<VariacaoLinha[]>(
     valoresIniciais?.variacoes ?? []
   );
@@ -102,6 +106,7 @@ export function ProdutoForm({
       unidadeMedida: unidadeMedida as ProdutoFormInput["unidadeMedida"],
       vendavel,
       precoVenda: precoVenda === "" ? undefined : Number(precoVenda),
+      estoqueMinimo: estoqueMinimo === "" ? 0 : Number(estoqueMinimo),
       variacoes: variacoes.map((v) => ({
         nome: v.nome,
         precoVenda: Number(v.precoVenda),
@@ -198,6 +203,21 @@ export function ProdutoForm({
               </option>
             ))}
           </select>
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label htmlFor="produto-estoque-minimo" className="text-sm font-medium text-zinc-700">
+            Estoque mínimo (para alerta)
+          </label>
+          <input
+            id="produto-estoque-minimo"
+            type="number"
+            step="0.001"
+            min="0"
+            value={estoqueMinimo}
+            onChange={(e) => setEstoqueMinimo(e.target.value)}
+            className="rounded-md border border-zinc-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900"
+          />
         </div>
 
         <div className="flex items-center gap-2">

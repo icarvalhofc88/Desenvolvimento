@@ -9,6 +9,7 @@ financeiro, totalmente isolados dos dados de qualquer outra loja.
 ✅ **Etapa 1**: estrutura do projeto + login com perfis de acesso.
 ✅ **Etapa 2**: suporte a múltiplas lojas (multi-tenant) + Admin Geral.
 ✅ **Etapa 3**: cadastro de produtos (categorias, variações, fichas técnicas).
+✅ **Etapa 4**: controle de estoque (notas fiscais de compra, ajustes, alertas, baixa por venda).
 
 ## Como o acesso é organizado
 
@@ -115,6 +116,9 @@ src/app/login/            Tela de login
 src/app/admin/lojas/      Telas do Admin Geral (gestão de lojas/licenças)
 src/app/dashboard/        Telas internas de cada loja (protegidas por login)
 src/app/dashboard/produtos/  Cadastro de produtos, categorias e fichas técnicas
+src/app/dashboard/estoque/   Estoque, notas fiscais de compra e ajustes
+src/lib/estoque.ts        Regras de entrada/saída de estoque (usado também pelo futuro Caixa/PDV)
+src/lib/nfe.ts            Leitor do XML de Nota Fiscal Eletrônica (NF-e)
 src/proxy.ts              "Porteiro" que barra quem não está logado
 ```
 
@@ -132,10 +136,26 @@ src/proxy.ts              "Porteiro" que barra quem não está logado
   usa 2 unidades de pão e 1 de presunto). A baixa automática desses
   insumos no estoque, ao vender, é implementada no módulo de estoque.
 
+## Controle de estoque
+
+- **Entrada por nota fiscal de compra**: lançada manualmente (formulário)
+  ou importando o **XML da NF-e** do fornecedor — o sistema lê o
+  fornecedor, número, data e itens automaticamente, e você confere/ajusta
+  a qual produto cadastrado cada item corresponde antes de confirmar.
+- **Ajuste manual de estoque**: entradas/saídas avulsas (correção, perda,
+  quebra), com motivo registrado.
+- **Alerta de estoque baixo**: cada produto tem um "estoque mínimo"; abaixo
+  dele, aparece um aviso na tela de Estoque.
+- **Baixa automática por venda**: função pronta em `src/lib/estoque.ts`
+  (`venderProdutos`) para o futuro módulo de Caixa/PDV chamar ao fechar
+  uma venda. Produto simples desconta ele mesmo; produto composto desconta
+  cada insumo da ficha técnica, multiplicado pela quantidade vendida. Se
+  não houver estoque suficiente de algum insumo, a venda inteira é
+  bloqueada (nada é alterado pela metade).
+
 ## Próximos módulos
 
-1. Controle de estoque (entrada por nota fiscal, baixa automática)
-2. Comandas por mesa e avulsas + app do garçom (mobile)
-3. Painel da cozinha
-4. Caixa / PDV com ticket de venda
-5. Financeiro (contas a pagar/receber, fluxo de caixa)
+1. Comandas por mesa e avulsas + app do garçom (mobile)
+2. Painel da cozinha
+3. Caixa / PDV com ticket de venda (vai usar a baixa automática já pronta)
+4. Financeiro (contas a pagar/receber, fluxo de caixa)

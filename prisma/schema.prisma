@@ -51,6 +51,8 @@ model Loja {
   acessosSuporte LogAcessoSuporte[]
   categorias     Categoria[]
   produtos       Produto[]
+  movimentosEstoque  MovimentoEstoque[]
+  notasFiscaisCompra NotaFiscalCompra[]
 }
 
 model Usuario {
@@ -72,6 +74,9 @@ model Usuario {
   usuariosCriados Usuario[] @relation("UsuarioCriadoPor")
 
   acessosSuporteFeitos LogAcessoSuporte[] @relation("AdminQueAcessou")
+
+  movimentosEstoqueCriados MovimentoEstoque[]
+  notasFiscaisCriadas      NotaFiscalCompra[]
 }
 
 // Registro de auditoria: toda vez que o Admin Geral entra em "modo suporte"
@@ -139,12 +144,22 @@ model Produto {
   ativo    Boolean  @default(true)
   criadoEm DateTime @default(now())
 
+  // Quantidade atual em estoque (mantida atualizada a cada movimento) e o
+  // nível mínimo a partir do qual o produto entra no alerta de estoque
+  // baixo. Para produtos COMPOSTO, quem tem estoque de verdade são os
+  // insumos da ficha técnica — o estoque do composto normalmente fica 0.
+  estoqueAtual  Decimal @default(0) @db.Decimal(12, 3)
+  estoqueMinimo Decimal @default(0) @db.Decimal(12, 3)
+
   variacoes Variacao[]
 
   // Ingredientes deste produto, quando ele é do tipo COMPOSTO.
   itensFichaTecnica ItemFichaTecnica[] @relation("ProdutoComposto")
   // Receitas de outros produtos em que este produto é usado como insumo.
   usadoComoInsumoEm ItemFichaTecnica[] @relation("ProdutoInsumo")
+
+  movimentosEstoque   MovimentoEstoque[]
+  itensNotaFiscal     ItemNotaFiscalCompra[]
 
   @@unique([lojaId, nome])
 }
@@ -177,4 +192,86 @@ model ItemFichaTecnica {
   quantidade Decimal @db.Decimal(10, 3)
 
   @@unique([produtoId, insumoId])
+}
+
+// Todo movimento de estoque (entrada ou saída) fica registrado aqui —
+// é o "extrato" que explica por que a quantidade de um produto mudou.
+enum TipoMovimentoEstoque {
+  ENTRADA_COMPRA // veio de uma nota fiscal de compra
+  ENTRADA_AJUSTE // correção manual (para mais)
+  SAIDA_VENDA // baixa por venda (direta ou via ficha técnica)
+  SAIDA_AJUSTE // correção manual (para menos)
+  SAIDA_PERDA // quebra, validade vencida, etc.
+}
+
+model MovimentoEstoque {
+  id     String @id @default(cuid())
+  lojaId String
+  loja   Loja   @relation(fields: [lojaId], references: [id])
+
+  produtoId String
+  produto   Produto @relation(fields: [produtoId], references: [id])
+
+  tipo TipoMovimentoEstoque
+  // Sempre um valor positivo — o "tipo" indica se soma ou subtrai do
+  // estoque atual do produto.
+  quantidade Decimal @db.Decimal(12, 3)
+
+  observacao String?
+  criadoEm   DateTime @default(now())
+
+  criadoPorId String?
+  criadoPor   Usuario? @relation(fields: [criadoPorId], references: [id])
+
+  // Preenchido quando o movimento veio de um item de nota fiscal de compra.
+  itemNotaFiscalId String?               @unique
+  itemNotaFiscal   ItemNotaFiscalCompra? @relation(fields: [itemNotaFiscalId], references: [id])
+}
+
+enum OrigemNotaFiscal {
+  XML
+  MANUAL
+}
+
+// Cabeçalho de uma nota fiscal de compra (do fornecedor), seja importada
+// por XML (NF-e) ou digitada manualmente.
+model NotaFiscalCompra {
+  id     String @id @default(cuid())
+  lojaId String
+  loja   Loja   @relation(fields: [lojaId], references: [id])
+
+  numero         String?
+  fornecedorNome String?
+  fornecedorCnpj String?
+  dataEmissao    DateTime?
+  valorTotal     Decimal?         @db.Decimal(12, 2)
+  origem         OrigemNotaFiscal
+
+  // Chave de acesso de 44 dígitos do XML da NF-e. Evita importar a mesma
+  // nota duas vezes por engano.
+  chaveAcesso String? @unique
+
+  criadoEm    DateTime @default(now())
+  criadoPorId String?
+  criadoPor   Usuario? @relation(fields: [criadoPorId], references: [id])
+
+  itens ItemNotaFiscalCompra[]
+}
+
+model ItemNotaFiscalCompra {
+  id           String           @id @default(cuid())
+  notaFiscalId String
+  notaFiscal   NotaFiscalCompra @relation(fields: [notaFiscalId], references: [id], onDelete: Cascade)
+
+  produtoId String
+  produto   Produto @relation(fields: [produtoId], references: [id])
+
+  // Descrição exatamente como veio na nota — útil se o produto interno
+  // for renomeado depois, para não perder a referência de origem.
+  descricaoOriginal String
+  quantidade        Decimal @db.Decimal(12, 3)
+  valorUnitario     Decimal? @db.Decimal(12, 4)
+  valorTotal        Decimal? @db.Decimal(12, 2)
+
+  movimentoEstoque MovimentoEstoque?
 }

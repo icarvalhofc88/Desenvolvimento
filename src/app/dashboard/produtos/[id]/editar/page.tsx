@@ -62,6 +62,7 @@ export default async function EditarProdutoPage({
             unidadeMedida: produto.unidadeMedida,
             vendavel: produto.vendavel,
             precoVenda: produto.precoVenda ? String(produto.precoVenda) : "",
+            estoqueMinimo: String(produto.estoqueMinimo),
             variacoes: produto.variacoes.map((v) => ({
               nome: v.nome,
               precoVenda: String(v.precoVenda),

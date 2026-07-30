@@ -67,6 +67,12 @@ export default async function DashboardLayout({
                 Produtos
               </Link>
               <Link
+                href="/dashboard/estoque"
+                className="text-sm text-zinc-600 hover:text-zinc-900"
+              >
+                Estoque
+              </Link>
+              <Link
                 href="/dashboard/usuarios"
                 className="text-sm text-zinc-600 hover:text-zinc-900"
               >

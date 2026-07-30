@@ -112,6 +112,7 @@ export const ProdutoFormSchema = z.object({
   }),
   vendavel: z.boolean(),
   precoVenda: z.coerce.number().nonnegative().optional(),
+  estoqueMinimo: z.coerce.number().nonnegative().default(0),
   variacoes: z.array(VariacaoInputSchema).default([]),
   itensFichaTecnica: z.array(ItemFichaTecnicaInputSchema).default([]),
 });
@@ -119,6 +120,67 @@ export const ProdutoFormSchema = z.object({
 export type ProdutoFormInput = z.input<typeof ProdutoFormSchema>;
 
 export type ProdutoFormState =
+  | {
+      erro?: string;
+      sucesso?: boolean;
+    }
+  | undefined;
+
+export const TIPOS_AJUSTE_ESTOQUE = [
+  "ENTRADA_AJUSTE",
+  "SAIDA_AJUSTE",
+  "SAIDA_PERDA",
+] as const;
+
+export const AjusteEstoqueSchema = z.object({
+  produtoId: z.string().min(1, { error: "Selecione um produto." }),
+  tipo: z.enum(TIPOS_AJUSTE_ESTOQUE, { error: "Selecione o tipo de ajuste." }),
+  quantidade: z.coerce
+    .number({ error: "Informe uma quantidade válida." })
+    .positive({ error: "A quantidade deve ser maior que zero." }),
+  observacao: z.string().trim().optional(),
+});
+
+export type AjusteEstoqueInput = z.input<typeof AjusteEstoqueSchema>;
+
+export type AjusteEstoqueState =
+  | {
+      erro?: string;
+      sucesso?: boolean;
+    }
+  | undefined;
+
+export const ItemNotaFiscalInputSchema = z.object({
+  produtoId: z.string().min(1, { error: "Selecione um produto para o item." }),
+  descricaoOriginal: z.string().trim().optional(),
+  quantidade: z.coerce
+    .number({ error: "Informe uma quantidade válida." })
+    .positive({ error: "A quantidade deve ser maior que zero." }),
+  valorUnitario: z.coerce.number().nonnegative().optional(),
+});
+
+export const NotaFiscalManualSchema = z.object({
+  numero: z.string().trim().optional(),
+  fornecedorNome: z.string().trim().optional(),
+  fornecedorCnpj: z.string().trim().optional(),
+  dataEmissao: z.string().trim().optional(),
+  itens: z
+    .array(ItemNotaFiscalInputSchema)
+    .min(1, { error: "Adicione ao menos um item à nota." }),
+});
+
+export type NotaFiscalManualInput = z.input<typeof NotaFiscalManualSchema>;
+
+export const NotaFiscalXmlConfirmacaoSchema = NotaFiscalManualSchema.extend({
+  chaveAcesso: z.string().trim().optional(),
+  valorTotal: z.coerce.number().nonnegative().optional(),
+});
+
+export type NotaFiscalXmlConfirmacaoInput = z.input<
+  typeof NotaFiscalXmlConfirmacaoSchema
+>;
+
+export type NotaFiscalFormState =
   | {
       erro?: string;
       sucesso?: boolean;
