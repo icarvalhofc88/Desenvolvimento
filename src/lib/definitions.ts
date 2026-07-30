@@ -68,3 +68,59 @@ export type NovaLojaFormState =
       sucesso?: boolean;
     }
   | undefined;
+
+export const TIPOS_PRODUTO = ["SIMPLES", "COMPOSTO"] as const;
+
+export const UNIDADES_MEDIDA = [
+  "un",
+  "kg",
+  "g",
+  "L",
+  "ml",
+  "porcao",
+  "fatia",
+  "pacote",
+  "duzia",
+] as const;
+
+export const CategoriaFormSchema = z.object({
+  nome: z.string().min(2, { error: "Informe o nome da categoria." }).trim(),
+  categoriaPaiId: z.string().trim().optional(),
+});
+
+export const VariacaoInputSchema = z.object({
+  nome: z.string().min(1, { error: "Informe o nome da variação." }).trim(),
+  precoVenda: z.coerce
+    .number({ error: "Informe um preço válido." })
+    .nonnegative({ error: "O preço não pode ser negativo." }),
+});
+
+export const ItemFichaTecnicaInputSchema = z.object({
+  insumoId: z.string().min(1, { error: "Selecione um insumo." }),
+  quantidade: z.coerce
+    .number({ error: "Informe uma quantidade válida." })
+    .positive({ error: "A quantidade deve ser maior que zero." }),
+});
+
+export const ProdutoFormSchema = z.object({
+  nome: z.string().min(2, { error: "Informe o nome do produto." }).trim(),
+  descricao: z.string().trim().optional(),
+  categoriaId: z.string().trim().optional(),
+  tipo: z.enum(TIPOS_PRODUTO, { error: "Selecione o tipo do produto." }),
+  unidadeMedida: z.enum(UNIDADES_MEDIDA, {
+    error: "Selecione uma unidade de medida válida.",
+  }),
+  vendavel: z.boolean(),
+  precoVenda: z.coerce.number().nonnegative().optional(),
+  variacoes: z.array(VariacaoInputSchema).default([]),
+  itensFichaTecnica: z.array(ItemFichaTecnicaInputSchema).default([]),
+});
+
+export type ProdutoFormInput = z.input<typeof ProdutoFormSchema>;
+
+export type ProdutoFormState =
+  | {
+      erro?: string;
+      sucesso?: boolean;
+    }
+  | undefined;

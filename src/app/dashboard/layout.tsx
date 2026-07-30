@@ -59,12 +59,20 @@ export default async function DashboardLayout({
             {loja?.nomeFantasia ?? "Reserva 88"}
           </Link>
           {podeGerenciarUsuarios && (
-            <Link
-              href="/dashboard/usuarios"
-              className="text-sm text-zinc-600 hover:text-zinc-900"
-            >
-              Usuários
-            </Link>
+            <>
+              <Link
+                href="/dashboard/produtos"
+                className="text-sm text-zinc-600 hover:text-zinc-900"
+              >
+                Produtos
+              </Link>
+              <Link
+                href="/dashboard/usuarios"
+                className="text-sm text-zinc-600 hover:text-zinc-900"
+              >
+                Usuários
+              </Link>
+            </>
           )}
         </nav>
 

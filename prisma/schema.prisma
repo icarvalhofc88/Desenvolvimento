@@ -49,6 +49,8 @@ model Loja {
 
   usuarios       Usuario[]
   acessosSuporte LogAcessoSuporte[]
+  categorias     Categoria[]
+  produtos       Produto[]
 }
 
 model Usuario {
@@ -84,4 +86,95 @@ model LogAcessoSuporte {
 
   iniciadoEm  DateTime  @default(now())
   encerradoEm DateTime?
+}
+
+// SIMPLES: produto "de uma peça só" (pode ser vendido direto e/ou usado
+// como insumo em receitas). COMPOSTO: "ficha técnica" — feito a partir de
+// outros produtos (ex: um sanduíche feito de pão, presunto e queijo).
+enum TipoProduto {
+  SIMPLES
+  COMPOSTO
+}
+
+// Categorias e subcategorias de produtos, sempre dentro de uma loja.
+model Categoria {
+  id     String @id @default(cuid())
+  lojaId String
+  loja   Loja   @relation(fields: [lojaId], references: [id])
+
+  nome           String
+  categoriaPaiId String?
+  categoriaPai   Categoria?  @relation("Subcategorias", fields: [categoriaPaiId], references: [id])
+  subcategorias  Categoria[] @relation("Subcategorias")
+
+  ativo    Boolean  @default(true)
+  criadoEm DateTime @default(now())
+
+  produtos Produto[]
+
+  @@unique([lojaId, categoriaPaiId, nome])
+}
+
+model Produto {
+  id     String @id @default(cuid())
+  lojaId String
+  loja   Loja   @relation(fields: [lojaId], references: [id])
+
+  categoriaId String?
+  categoria   Categoria? @relation(fields: [categoriaId], references: [id])
+
+  nome          String
+  descricao     String?
+  tipo          TipoProduto @default(SIMPLES)
+  unidadeMedida String      @default("un")
+
+  // Se o produto aparece à venda (no PDV/comandas) ou é só um insumo
+  // usado dentro de fichas técnicas de outros produtos.
+  vendavel Boolean @default(true)
+
+  // Preço de venda "base". Só é usado quando o produto não tem variações
+  // (cada variação tem seu próprio preço).
+  precoVenda Decimal? @db.Decimal(10, 2)
+
+  ativo    Boolean  @default(true)
+  criadoEm DateTime @default(now())
+
+  variacoes Variacao[]
+
+  // Ingredientes deste produto, quando ele é do tipo COMPOSTO.
+  itensFichaTecnica ItemFichaTecnica[] @relation("ProdutoComposto")
+  // Receitas de outros produtos em que este produto é usado como insumo.
+  usadoComoInsumoEm ItemFichaTecnica[] @relation("ProdutoInsumo")
+
+  @@unique([lojaId, nome])
+}
+
+// Variações simples de um produto (ex: "Pequeno"/"Grande", "Morango"),
+// cada uma com seu próprio preço de venda.
+model Variacao {
+  id        String  @id @default(cuid())
+  produtoId String
+  produto   Produto @relation(fields: [produtoId], references: [id], onDelete: Cascade)
+
+  nome       String
+  precoVenda Decimal @db.Decimal(10, 2)
+  ativo      Boolean @default(true)
+
+  @@unique([produtoId, nome])
+}
+
+// Um "item" da ficha técnica: quanto de um insumo (outro Produto) entra
+// na receita de um produto composto.
+model ItemFichaTecnica {
+  id String @id @default(cuid())
+
+  produtoId String
+  produto   Produto @relation("ProdutoComposto", fields: [produtoId], references: [id], onDelete: Cascade)
+
+  insumoId String
+  insumo   Produto @relation("ProdutoInsumo", fields: [insumoId], references: [id])
+
+  quantidade Decimal @db.Decimal(10, 3)
+
+  @@unique([produtoId, insumoId])
 }

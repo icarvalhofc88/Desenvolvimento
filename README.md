@@ -8,6 +8,7 @@ financeiro, totalmente isolados dos dados de qualquer outra loja.
 
 ✅ **Etapa 1**: estrutura do projeto + login com perfis de acesso.
 ✅ **Etapa 2**: suporte a múltiplas lojas (multi-tenant) + Admin Geral.
+✅ **Etapa 3**: cadastro de produtos (categorias, variações, fichas técnicas).
 
 ## Como o acesso é organizado
 
@@ -113,14 +114,28 @@ src/app/actions/          Ações do servidor (login, criar usuário, criar loja
 src/app/login/            Tela de login
 src/app/admin/lojas/      Telas do Admin Geral (gestão de lojas/licenças)
 src/app/dashboard/        Telas internas de cada loja (protegidas por login)
+src/app/dashboard/produtos/  Cadastro de produtos, categorias e fichas técnicas
 src/proxy.ts              "Porteiro" que barra quem não está logado
 ```
 
+## Cadastro de produtos
+
+- **Categorias**: podem ter subcategorias (ex: "Lanches" → "Quentes").
+- **Produto simples**: um item "de uma peça só". Pode ter o campo
+  "Aparece à venda" desmarcado para funcionar só como insumo interno
+  (ex: "Pão de forma", usado em receitas mas não vendido sozinho).
+- **Variações**: um mesmo produto pode ter variações com preços
+  diferentes (ex: "Lata 350ml" vs "600ml"). Quando há variações, o
+  preço "base" do produto não é usado.
+- **Produto composto (ficha técnica)**: feito a partir de outros
+  produtos/insumos, com a quantidade de cada um (ex: um sanduíche
+  usa 2 unidades de pão e 1 de presunto). A baixa automática desses
+  insumos no estoque, ao vender, é implementada no módulo de estoque.
+
 ## Próximos módulos
 
-1. Cadastro de produtos (categorias, variações, fichas técnicas)
-2. Controle de estoque (entrada por nota fiscal, baixa automática)
-3. Comandas por mesa e avulsas + app do garçom (mobile)
-4. Painel da cozinha
-5. Caixa / PDV com ticket de venda
-6. Financeiro (contas a pagar/receber, fluxo de caixa)
+1. Controle de estoque (entrada por nota fiscal, baixa automática)
+2. Comandas por mesa e avulsas + app do garçom (mobile)
+3. Painel da cozinha
+4. Caixa / PDV com ticket de venda
+5. Financeiro (contas a pagar/receber, fluxo de caixa)
