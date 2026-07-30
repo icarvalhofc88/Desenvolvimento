@@ -1,0 +1,39 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Perfis de acesso do sistema.
+// DONO e GERENTE enxergam tudo, incluindo financeiro e relatórios.
+// CAIXA opera o PDV/fechamento de comandas.
+// GARCOM lança pedidos nas comandas pelo celular.
+// COZINHA acompanha o painel de pedidos.
+enum Perfil {
+  DONO
+  GERENTE
+  CAIXA
+  GARCOM
+  COZINHA
+}
+
+model Usuario {
+  id        String   @id @default(cuid())
+  nome      String
+  email     String   @unique
+  senhaHash String
+  perfil    Perfil
+  ativo     Boolean  @default(true)
+  criadoEm  DateTime @default(now())
+  criadoPorId String?
+  criadoPor   Usuario?  @relation("UsuarioCriadoPor", fields: [criadoPorId], references: [id])
+  usuariosCriados Usuario[] @relation("UsuarioCriadoPor")
+}
