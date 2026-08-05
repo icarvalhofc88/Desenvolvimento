@@ -11,6 +11,7 @@ financeiro, totalmente isolados dos dados de qualquer outra loja.
 ✅ **Etapa 3**: cadastro de produtos (categorias, variações, fichas técnicas).
 ✅ **Etapa 4**: controle de estoque (notas fiscais de compra, ajustes, alertas, baixa por venda).
 ✅ **Etapa 5**: comandas por mesa e avulsas, com tela mobile (PWA) para o garçom.
+✅ **Etapa 6**: painel da cozinha (pedidos em tempo real).
 
 ## Como o acesso é organizado
 
@@ -23,7 +24,7 @@ financeiro, totalmente isolados dos dados de qualquer outra loja.
   incluindo cadastro de usuários e financeiro.
 - **Caixa**: abre/lança comandas e opera o PDV (módulo futuro para fechar).
 - **Garçom**: abre comandas e lança pedidos, inclusive pelo celular.
-- **Cozinha**: acompanha o painel de pedidos (módulo futuro).
+- **Cozinha**: acompanha o painel de pedidos e avança o preparo.
 
 ### Regra de ouro do multi-tenant
 
@@ -119,6 +120,7 @@ src/app/dashboard/        Telas internas de cada loja (protegidas por login)
 src/app/dashboard/produtos/  Cadastro de produtos, categorias e fichas técnicas
 src/app/dashboard/estoque/   Estoque, notas fiscais de compra e ajustes
 src/app/dashboard/comandas/  Comandas por mesa/avulsas e lançamento de pedidos
+src/app/dashboard/cozinha/   Painel da cozinha (atualização automática)
 src/lib/estoque.ts        Regras de entrada/saída de estoque (usado também pelo futuro Caixa/PDV)
 src/lib/nfe.ts            Leitor do XML de Nota Fiscal Eletrônica (NF-e)
 src/proxy.ts              "Porteiro" que barra quem não está logado
@@ -163,18 +165,30 @@ public/manifest.json      Manifesto do PWA (permite "instalar" no celular)
   existente, em vez de criar uma duplicada.
 - Cada item lançado guarda o **preço no momento da venda** (se o preço do
   produto mudar depois, os itens já lançados não são afetados) e um
-  status (`Pendente`, `Em preparo`, `Pronto`, `Entregue`, `Cancelado`) —
-  os três do meio serão usados pelo painel da cozinha (próximo módulo).
+  status (`Pendente`, `Em preparo`, `Pronto`, `Entregue`, `Cancelado`).
 - Itens/comandas são **cancelados, não excluídos**, preservando o
   histórico.
-- Acessível por Dono, Gerente, Caixa e Garçom (Cozinha terá sua própria
-  tela no próximo módulo).
+- Acessível por Dono, Gerente, Caixa e Garçom.
 - **PWA**: a tela de comandas pode ser "instalada" na tela inicial do
   celular do garçom (`public/manifest.json`) — é o mesmo site, só que
   parece um aplicativo.
 
+## Painel da cozinha
+
+- Mostra, agrupados por mesa/comanda, todos os itens ainda não entregues
+  (`Pendente`, `Em preparo`, `Pronto`) das comandas abertas.
+- A tela **se atualiza sozinha** a cada poucos segundos (sem precisar
+  apertar F5) — suficiente para o caso de uso, sem precisar de
+  infraestrutura de tempo real (WebSockets).
+- Botões avançam (`Iniciar preparo` → `Marcar pronto` → `Marcar entregue`)
+  ou desfazem o status de cada item; quem vê a tela pode mexer nela —
+  não há separação rígida entre "cozinha" e "sala", já que em negócios
+  pequenos a mesma pessoa costuma acumular funções.
+- Acessível por Dono, Gerente e Cozinha. O botão "Marcar entregue"
+  também aparece na tela da própria comanda, para o garçom usar quando
+  for buscar o pedido na cozinha.
+
 ## Próximos módulos
 
-1. Painel da cozinha (pedidos em tempo real)
-2. Caixa / PDV com ticket de venda (vai usar a baixa automática já pronta)
-3. Financeiro (contas a pagar/receber, fluxo de caixa)
+1. Caixa / PDV com ticket de venda (vai usar a baixa automática já pronta)
+2. Financeiro (contas a pagar/receber, fluxo de caixa)

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { exigirContextoLoja } from "@/lib/dal";
 import { db } from "@/lib/db";
 import { cancelarItemComanda, cancelarComanda } from "@/app/actions/comandas";
+import { avancarStatusItem } from "@/app/actions/cozinha";
 import { AdicionarItemForm } from "./adicionar-item-form";
 
 export const metadata: Metadata = {
@@ -118,16 +119,28 @@ export default async function ComandaPage({
                   {NOME_STATUS_ITEM[item.status]}
                 </td>
                 <td className="px-3 py-2 text-right">
-                  {aberta && item.status !== "CANCELADO" && (
-                    <form action={cancelarItemComanda.bind(null, item.id)}>
-                      <button
-                        type="submit"
-                        className="text-xs font-medium text-red-600 underline hover:text-red-800"
-                      >
-                        Remover
-                      </button>
-                    </form>
-                  )}
+                  <div className="flex justify-end gap-3">
+                    {aberta && item.status === "PRONTO" && (
+                      <form action={avancarStatusItem.bind(null, item.id)}>
+                        <button
+                          type="submit"
+                          className="text-xs font-medium text-green-700 underline hover:text-green-900"
+                        >
+                          Marcar entregue
+                        </button>
+                      </form>
+                    )}
+                    {aberta && item.status !== "CANCELADO" && (
+                      <form action={cancelarItemComanda.bind(null, item.id)}>
+                        <button
+                          type="submit"
+                          className="text-xs font-medium text-red-600 underline hover:text-red-800"
+                        >
+                          Remover
+                        </button>
+                      </form>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}

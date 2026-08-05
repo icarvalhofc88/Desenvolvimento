@@ -44,6 +44,10 @@ export default async function DashboardLayout({
     "GARCOM",
   ].includes(contexto.perfilEfetivo);
 
+  const podeVerPainelCozinha = ["DONO", "GERENTE", "COZINHA"].includes(
+    contexto.perfilEfetivo
+  );
+
   return (
     <div className="flex flex-1 flex-col">
       {contexto.modoSuporte && (
@@ -71,6 +75,14 @@ export default async function DashboardLayout({
               className="text-sm text-zinc-600 hover:text-zinc-900"
             >
               Comandas
+            </Link>
+          )}
+          {podeVerPainelCozinha && (
+            <Link
+              href="/dashboard/cozinha"
+              className="text-sm text-zinc-600 hover:text-zinc-900"
+            >
+              Cozinha
             </Link>
           )}
           {podeGerenciarUsuarios && (
