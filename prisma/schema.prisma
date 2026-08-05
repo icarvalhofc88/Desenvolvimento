@@ -53,6 +53,7 @@ model Loja {
   produtos       Produto[]
   movimentosEstoque  MovimentoEstoque[]
   notasFiscaisCompra NotaFiscalCompra[]
+  comandas           Comanda[]
 }
 
 model Usuario {
@@ -77,6 +78,9 @@ model Usuario {
 
   movimentosEstoqueCriados MovimentoEstoque[]
   notasFiscaisCriadas      NotaFiscalCompra[]
+
+  comandasAbertas   Comanda[]     @relation("ComandaAbertaPor")
+  itensComandaAdicionados ItemComanda[]
 }
 
 // Registro de auditoria: toda vez que o Admin Geral entra em "modo suporte"
@@ -160,6 +164,7 @@ model Produto {
 
   movimentosEstoque   MovimentoEstoque[]
   itensNotaFiscal     ItemNotaFiscalCompra[]
+  itensComanda        ItemComanda[]
 
   @@unique([lojaId, nome])
 }
@@ -174,6 +179,8 @@ model Variacao {
   nome       String
   precoVenda Decimal @db.Decimal(10, 2)
   ativo      Boolean @default(true)
+
+  itensComanda ItemComanda[]
 
   @@unique([produtoId, nome])
 }
@@ -274,4 +281,73 @@ model ItemNotaFiscalCompra {
   valorTotal        Decimal? @db.Decimal(12, 2)
 
   movimentoEstoque MovimentoEstoque?
+}
+
+// Comanda por mesa (ex: "Mesa 5") ou avulsa/numerada (ex: "Comanda 12").
+enum TipoComanda {
+  MESA
+  AVULSA
+}
+
+enum StatusComanda {
+  ABERTA
+  FECHADA
+  CANCELADA
+}
+
+model Comanda {
+  id     String @id @default(cuid())
+  lojaId String
+  loja   Loja   @relation(fields: [lojaId], references: [id])
+
+  // Número sequencial da comanda dentro da loja (mostrado ao cliente/garçom
+  // independente do tipo, ex: "Comanda #12").
+  numero Int
+
+  tipo TipoComanda
+  // Identificador da mesa (ex: "5", "Varanda 2") — só para tipo MESA.
+  mesa String?
+
+  status    StatusComanda @default(ABERTA)
+  abertaEm  DateTime      @default(now())
+  fechadaEm DateTime?
+
+  abertaPorId String?
+  abertaPor   Usuario? @relation("ComandaAbertaPor", fields: [abertaPorId], references: [id])
+
+  itens ItemComanda[]
+
+  @@unique([lojaId, numero])
+}
+
+enum StatusItemComanda {
+  PENDENTE // acabou de ser lançado pelo garçom
+  EM_PREPARO // a cozinha começou a preparar
+  PRONTO // pronto para servir
+  ENTREGUE // já foi levado à mesa/cliente
+  CANCELADO
+}
+
+model ItemComanda {
+  id        String  @id @default(cuid())
+  comandaId String
+  comanda   Comanda @relation(fields: [comandaId], references: [id], onDelete: Cascade)
+
+  produtoId String
+  produto   Produto @relation(fields: [produtoId], references: [id])
+
+  variacaoId String?
+  variacao   Variacao? @relation(fields: [variacaoId], references: [id])
+
+  quantidade Decimal @db.Decimal(10, 3)
+  // Preço "congelado" no momento do lançamento — se o preço do produto
+  // mudar depois, os itens já lançados não são afetados.
+  precoUnitario Decimal @db.Decimal(10, 2)
+
+  observacao String?
+  status     StatusItemComanda @default(PENDENTE)
+
+  criadoEm    DateTime @default(now())
+  criadoPorId String?
+  criadoPor   Usuario? @relation(fields: [criadoPorId], references: [id])
 }

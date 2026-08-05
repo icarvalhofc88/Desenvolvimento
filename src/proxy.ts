@@ -26,6 +26,9 @@ export default async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Roda em tudo, exceto arquivos estáticos e imagens do Next.js.
-  matcher: ["/((?!_next/static|_next/image|.*\\.(?:png|jpg|jpeg|svg|ico|webp)$).*)"],
+  // Roda em tudo, exceto arquivos estáticos, imagens e o manifesto do PWA
+  // (o navegador precisa conseguir buscar esses arquivos sem estar logado).
+  matcher: [
+    "/((?!_next/static|_next/image|manifest\\.json|.*\\.(?:png|jpg|jpeg|svg|ico|webp)$).*)",
+  ],
 };

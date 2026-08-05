@@ -37,6 +37,13 @@ export default async function DashboardLayout({
   const podeGerenciarUsuarios =
     contexto.perfilEfetivo === "DONO" || contexto.perfilEfetivo === "GERENTE";
 
+  const podeOperarComandas = [
+    "DONO",
+    "GERENTE",
+    "CAIXA",
+    "GARCOM",
+  ].includes(contexto.perfilEfetivo);
+
   return (
     <div className="flex flex-1 flex-col">
       {contexto.modoSuporte && (
@@ -58,6 +65,14 @@ export default async function DashboardLayout({
           <Link href="/dashboard" className="font-semibold text-zinc-900">
             {loja?.nomeFantasia ?? "Reserva 88"}
           </Link>
+          {podeOperarComandas && (
+            <Link
+              href="/dashboard/comandas"
+              className="text-sm text-zinc-600 hover:text-zinc-900"
+            >
+              Comandas
+            </Link>
+          )}
           {podeGerenciarUsuarios && (
             <>
               <Link

@@ -10,6 +10,7 @@ financeiro, totalmente isolados dos dados de qualquer outra loja.
 ✅ **Etapa 2**: suporte a múltiplas lojas (multi-tenant) + Admin Geral.
 ✅ **Etapa 3**: cadastro de produtos (categorias, variações, fichas técnicas).
 ✅ **Etapa 4**: controle de estoque (notas fiscais de compra, ajustes, alertas, baixa por venda).
+✅ **Etapa 5**: comandas por mesa e avulsas, com tela mobile (PWA) para o garçom.
 
 ## Como o acesso é organizado
 
@@ -20,8 +21,8 @@ financeiro, totalmente isolados dos dados de qualquer outra loja.
   em qual loja e quando).
 - **Dono** e **Gerente**: acesso completo dentro da própria loja,
   incluindo cadastro de usuários e financeiro.
-- **Caixa**: opera o PDV (módulo futuro).
-- **Garçom**: lança pedidos nas comandas pelo celular (módulo futuro).
+- **Caixa**: abre/lança comandas e opera o PDV (módulo futuro para fechar).
+- **Garçom**: abre comandas e lança pedidos, inclusive pelo celular.
 - **Cozinha**: acompanha o painel de pedidos (módulo futuro).
 
 ### Regra de ouro do multi-tenant
@@ -117,9 +118,11 @@ src/app/admin/lojas/      Telas do Admin Geral (gestão de lojas/licenças)
 src/app/dashboard/        Telas internas de cada loja (protegidas por login)
 src/app/dashboard/produtos/  Cadastro de produtos, categorias e fichas técnicas
 src/app/dashboard/estoque/   Estoque, notas fiscais de compra e ajustes
+src/app/dashboard/comandas/  Comandas por mesa/avulsas e lançamento de pedidos
 src/lib/estoque.ts        Regras de entrada/saída de estoque (usado também pelo futuro Caixa/PDV)
 src/lib/nfe.ts            Leitor do XML de Nota Fiscal Eletrônica (NF-e)
 src/proxy.ts              "Porteiro" que barra quem não está logado
+public/manifest.json      Manifesto do PWA (permite "instalar" no celular)
 ```
 
 ## Cadastro de produtos
@@ -153,9 +156,25 @@ src/proxy.ts              "Porteiro" que barra quem não está logado
   não houver estoque suficiente de algum insumo, a venda inteira é
   bloqueada (nada é alterado pela metade).
 
+## Comandas
+
+- **Por mesa** (ex: "Mesa 7") ou **avulsas/numeradas** (ex: "Comanda #2").
+  Abrir uma comanda para uma mesa já ocupada reaproveita a comanda
+  existente, em vez de criar uma duplicada.
+- Cada item lançado guarda o **preço no momento da venda** (se o preço do
+  produto mudar depois, os itens já lançados não são afetados) e um
+  status (`Pendente`, `Em preparo`, `Pronto`, `Entregue`, `Cancelado`) —
+  os três do meio serão usados pelo painel da cozinha (próximo módulo).
+- Itens/comandas são **cancelados, não excluídos**, preservando o
+  histórico.
+- Acessível por Dono, Gerente, Caixa e Garçom (Cozinha terá sua própria
+  tela no próximo módulo).
+- **PWA**: a tela de comandas pode ser "instalada" na tela inicial do
+  celular do garçom (`public/manifest.json`) — é o mesmo site, só que
+  parece um aplicativo.
+
 ## Próximos módulos
 
-1. Comandas por mesa e avulsas + app do garçom (mobile)
-2. Painel da cozinha
-3. Caixa / PDV com ticket de venda (vai usar a baixa automática já pronta)
-4. Financeiro (contas a pagar/receber, fluxo de caixa)
+1. Painel da cozinha (pedidos em tempo real)
+2. Caixa / PDV com ticket de venda (vai usar a baixa automática já pronta)
+3. Financeiro (contas a pagar/receber, fluxo de caixa)

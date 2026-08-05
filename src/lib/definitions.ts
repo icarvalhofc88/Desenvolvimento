@@ -186,3 +186,45 @@ export type NotaFiscalFormState =
       sucesso?: boolean;
     }
   | undefined;
+
+export const TIPOS_COMANDA = ["MESA", "AVULSA"] as const;
+
+export const AbrirComandaSchema = z
+  .object({
+    tipo: z.enum(TIPOS_COMANDA, { error: "Selecione o tipo de comanda." }),
+    mesa: z.string().trim().optional(),
+  })
+  .refine((dados) => dados.tipo !== "MESA" || !!dados.mesa, {
+    error: "Informe a mesa.",
+    path: ["mesa"],
+  });
+
+export type AbrirComandaInput = z.input<typeof AbrirComandaSchema>;
+
+export type AbrirComandaState =
+  | {
+      erro?: string;
+      comandaId?: string;
+    }
+  | undefined;
+
+export const AdicionarItemComandaSchema = z.object({
+  comandaId: z.string().min(1),
+  produtoId: z.string().min(1, { error: "Selecione um produto." }),
+  variacaoId: z.string().trim().optional(),
+  quantidade: z.coerce
+    .number({ error: "Informe uma quantidade válida." })
+    .positive({ error: "A quantidade deve ser maior que zero." }),
+  observacao: z.string().trim().optional(),
+});
+
+export type AdicionarItemComandaInput = z.input<
+  typeof AdicionarItemComandaSchema
+>;
+
+export type ComandaActionState =
+  | {
+      erro?: string;
+      sucesso?: boolean;
+    }
+  | undefined;
