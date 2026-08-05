@@ -48,10 +48,14 @@ export default async function DashboardLayout({
     contexto.perfilEfetivo
   );
 
+  const podeVerCaixa = ["DONO", "GERENTE", "CAIXA"].includes(
+    contexto.perfilEfetivo
+  );
+
   return (
     <div className="flex flex-1 flex-col">
       {contexto.modoSuporte && (
-        <div className="flex items-center justify-between bg-amber-100 px-6 py-2 text-sm text-amber-900">
+        <div className="print:hidden flex items-center justify-between bg-amber-100 px-6 py-2 text-sm text-amber-900">
           <span>
             Modo suporte: você está operando dentro de{" "}
             <strong>{loja?.nomeFantasia}</strong> como Admin Geral.
@@ -64,7 +68,7 @@ export default async function DashboardLayout({
         </div>
       )}
 
-      <header className="flex items-center justify-between border-b border-zinc-200 bg-white px-6 py-3">
+      <header className="print:hidden flex items-center justify-between border-b border-zinc-200 bg-white px-6 py-3">
         <nav className="flex items-center gap-4">
           <Link href="/dashboard" className="font-semibold text-zinc-900">
             {loja?.nomeFantasia ?? "Reserva 88"}
@@ -83,6 +87,14 @@ export default async function DashboardLayout({
               className="text-sm text-zinc-600 hover:text-zinc-900"
             >
               Cozinha
+            </Link>
+          )}
+          {podeVerCaixa && (
+            <Link
+              href="/dashboard/caixa"
+              className="text-sm text-zinc-600 hover:text-zinc-900"
+            >
+              Caixa
             </Link>
           )}
           {podeGerenciarUsuarios && (

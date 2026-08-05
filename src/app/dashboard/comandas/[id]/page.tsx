@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { exigirContextoLoja } from "@/lib/dal";
 import { db } from "@/lib/db";
@@ -68,6 +69,9 @@ export default async function ComandaPage({
   );
 
   const aberta = comanda.status === "ABERTA";
+  const podeFecharCaixa = ["DONO", "GERENTE", "CAIXA"].includes(
+    contexto.perfilEfetivo
+  );
 
   return (
     <div className="mx-auto flex w-full max-w-xl flex-col gap-6">
@@ -80,16 +84,34 @@ export default async function ComandaPage({
             Status: {NOME_STATUS_COMANDA[comanda.status]}
           </p>
         </div>
-        {aberta && (
-          <form action={cancelarComanda.bind(null, comanda.id)}>
-            <button
-              type="submit"
-              className="rounded-md border border-red-300 px-3 py-1.5 text-xs text-red-700 hover:bg-red-50"
+        <div className="flex items-center gap-2">
+          {aberta && podeFecharCaixa && itensAtivos.length > 0 && (
+            <Link
+              href={`/dashboard/comandas/${comanda.id}/fechar`}
+              className="rounded-md bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-zinc-800"
             >
-              Cancelar comanda
-            </button>
-          </form>
-        )}
+              Fechar comanda
+            </Link>
+          )}
+          {comanda.status === "FECHADA" && (
+            <Link
+              href={`/dashboard/comandas/${comanda.id}/ticket`}
+              className="rounded-md border border-zinc-300 px-3 py-1.5 text-xs text-zinc-700 hover:bg-zinc-50"
+            >
+              Ver ticket
+            </Link>
+          )}
+          {aberta && (
+            <form action={cancelarComanda.bind(null, comanda.id)}>
+              <button
+                type="submit"
+                className="rounded-md border border-red-300 px-3 py-1.5 text-xs text-red-700 hover:bg-red-50"
+              >
+                Cancelar comanda
+              </button>
+            </form>
+          )}
+        </div>
       </div>
 
       <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white">

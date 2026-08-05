@@ -12,6 +12,7 @@ financeiro, totalmente isolados dos dados de qualquer outra loja.
 ✅ **Etapa 4**: controle de estoque (notas fiscais de compra, ajustes, alertas, baixa por venda).
 ✅ **Etapa 5**: comandas por mesa e avulsas, com tela mobile (PWA) para o garçom.
 ✅ **Etapa 6**: painel da cozinha (pedidos em tempo real).
+✅ **Etapa 7**: Caixa / PDV (fecha comanda, baixa estoque, ticket interno).
 
 ## Como o acesso é organizado
 
@@ -22,7 +23,7 @@ financeiro, totalmente isolados dos dados de qualquer outra loja.
   em qual loja e quando).
 - **Dono** e **Gerente**: acesso completo dentro da própria loja,
   incluindo cadastro de usuários e financeiro.
-- **Caixa**: abre/lança comandas e opera o PDV (módulo futuro para fechar).
+- **Caixa**: abre/lança comandas e fecha a conta (Caixa/PDV).
 - **Garçom**: abre comandas e lança pedidos, inclusive pelo celular.
 - **Cozinha**: acompanha o painel de pedidos e avança o preparo.
 
@@ -121,7 +122,8 @@ src/app/dashboard/produtos/  Cadastro de produtos, categorias e fichas técnicas
 src/app/dashboard/estoque/   Estoque, notas fiscais de compra e ajustes
 src/app/dashboard/comandas/  Comandas por mesa/avulsas e lançamento de pedidos
 src/app/dashboard/cozinha/   Painel da cozinha (atualização automática)
-src/lib/estoque.ts        Regras de entrada/saída de estoque (usado também pelo futuro Caixa/PDV)
+src/app/dashboard/caixa/     Histórico de vendas e fechamento de comandas
+src/lib/estoque.ts        Regras de entrada/saída de estoque, incluindo venda
 src/lib/nfe.ts            Leitor do XML de Nota Fiscal Eletrônica (NF-e)
 src/proxy.ts              "Porteiro" que barra quem não está logado
 public/manifest.json      Manifesto do PWA (permite "instalar" no celular)
@@ -151,12 +153,12 @@ public/manifest.json      Manifesto do PWA (permite "instalar" no celular)
   quebra), com motivo registrado.
 - **Alerta de estoque baixo**: cada produto tem um "estoque mínimo"; abaixo
   dele, aparece um aviso na tela de Estoque.
-- **Baixa automática por venda**: função pronta em `src/lib/estoque.ts`
-  (`venderProdutos`) para o futuro módulo de Caixa/PDV chamar ao fechar
-  uma venda. Produto simples desconta ele mesmo; produto composto desconta
-  cada insumo da ficha técnica, multiplicado pela quantidade vendida. Se
-  não houver estoque suficiente de algum insumo, a venda inteira é
-  bloqueada (nada é alterado pela metade).
+- **Baixa automática por venda**: `venderProdutos` (`src/lib/estoque.ts`) é
+  chamada pelo Caixa ao fechar uma comanda. Produto simples desconta ele
+  mesmo; produto composto desconta cada insumo da ficha técnica,
+  multiplicado pela quantidade vendida. Se não houver estoque suficiente
+  de algum insumo, o fechamento inteiro é bloqueado (nada é alterado pela
+  metade).
 
 ## Comandas
 
@@ -188,7 +190,28 @@ public/manifest.json      Manifesto do PWA (permite "instalar" no celular)
   também aparece na tela da própria comanda, para o garçom usar quando
   for buscar o pedido na cozinha.
 
+## Caixa / PDV
+
+- **Fechar comanda**: mostra os itens e o total, e aceita **um ou mais
+  pagamentos** (dá para dividir a conta entre formas diferentes, ex:
+  metade dinheiro e metade cartão). Calcula troco automaticamente.
+- Ao confirmar, em uma **única transação** (tudo ou nada):
+  1. dá baixa no estoque (`venderProdutos`, incluindo ficha técnica);
+  2. registra o(s) pagamento(s);
+  3. marca a comanda como `FECHADA`.
+
+  Se faltar estoque de algum item, o fechamento inteiro é recusado com
+  uma mensagem clara — nada fica pago pela metade.
+- **Ticket interno**: comprovante não fiscal, imprimível (`Imprimir` usa
+  a impressão do navegador), com aviso "documento sem valor fiscal —
+  comprovante interno de controle". Fica disponível para reimpressão a
+  qualquer momento a partir do histórico do Caixa.
+- Fechar comandas é restrito a Dono, Gerente e Caixa (Garçom lança
+  pedidos, mas não mexe em pagamento).
+- **Fase futura**: quando você tiver certificado digital e contratar um
+  serviço emissor (ex: Focus NFe), a emissão de NFC-e oficial pode ser
+  encaixada aqui, ao lado do ticket interno.
+
 ## Próximos módulos
 
-1. Caixa / PDV com ticket de venda (vai usar a baixa automática já pronta)
-2. Financeiro (contas a pagar/receber, fluxo de caixa)
+1. Financeiro (contas a pagar/receber, fluxo de caixa)

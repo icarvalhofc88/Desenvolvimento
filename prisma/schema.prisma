@@ -79,7 +79,8 @@ model Usuario {
   movimentosEstoqueCriados MovimentoEstoque[]
   notasFiscaisCriadas      NotaFiscalCompra[]
 
-  comandasAbertas   Comanda[]     @relation("ComandaAbertaPor")
+  comandasAbertas         Comanda[]     @relation("ComandaAbertaPor")
+  comandasFechadas        Comanda[]     @relation("ComandaFechadaPor")
   itensComandaAdicionados ItemComanda[]
 }
 
@@ -315,9 +316,35 @@ model Comanda {
   abertaPorId String?
   abertaPor   Usuario? @relation("ComandaAbertaPor", fields: [abertaPorId], references: [id])
 
-  itens ItemComanda[]
+  fechadaPorId String?
+  fechadaPor   Usuario? @relation("ComandaFechadaPor", fields: [fechadaPorId], references: [id])
+
+  itens      ItemComanda[]
+  pagamentos Pagamento[]
 
   @@unique([lojaId, numero])
+}
+
+// Formas de pagamento aceitas no fechamento da comanda (Caixa/PDV).
+enum FormaPagamento {
+  DINHEIRO
+  CARTAO_DEBITO
+  CARTAO_CREDITO
+  PIX
+  OUTRO
+}
+
+// Um ou mais pagamentos que fecham uma comanda (permite dividir a conta
+// entre formas diferentes, ex: metade no cartão e metade em dinheiro).
+model Pagamento {
+  id        String  @id @default(cuid())
+  comandaId String
+  comanda   Comanda @relation(fields: [comandaId], references: [id], onDelete: Cascade)
+
+  forma FormaPagamento
+  valor Decimal        @db.Decimal(10, 2)
+
+  criadoEm DateTime @default(now())
 }
 
 enum StatusItemComanda {

@@ -69,23 +69,29 @@ export async function registrarMovimento(
   });
 }
 
-// Dá baixa no estoque referente à venda de produtos. Usada pelo módulo de
-// Caixa/PDV (ainda não construído): quando uma venda é fechada, ele chama
-// esta função com os itens vendidos.
+// Dá baixa no estoque referente à venda de produtos. Chamada pelo módulo
+// de Caixa/PDV quando uma comanda é fechada.
 //
 // - Produto SIMPLES: desconta o próprio produto.
 // - Produto COMPOSTO: desconta cada insumo da ficha técnica, multiplicado
 //   pela quantidade vendida (ex: vender 2 sanduíches desconta o dobro de
 //   pão e presunto da receita).
 //
-// Tudo roda em uma única transação: ou a venda inteira dá baixa com
-// sucesso, ou nada é alterado (evita estoque "pela metade").
+// Por padrão abre sua própria transação: ou a venda inteira dá baixa com
+// sucesso, ou nada é alterado (evita estoque "pela metade"). Se já existe
+// uma transação em andamento (ex: o fechamento da comanda, que também
+// registra os pagamentos), passe-a em `opcoes.tx` para tudo acontecer
+// atomicamente junto.
 export async function venderProdutos(
   lojaId: string,
   itensVendidos: { produtoId: string; quantidade: number }[],
-  opcoes?: { criadoPorId?: string; observacao?: string }
+  opcoes?: {
+    criadoPorId?: string;
+    observacao?: string;
+    tx?: Prisma.TransactionClient;
+  }
 ) {
-  return db.$transaction(async (tx) => {
+  const executar = async (tx: Prisma.TransactionClient) => {
     for (const item of itensVendidos) {
       const produto = await tx.produto.findUnique({
         where: { id: item.produtoId },
@@ -119,5 +125,10 @@ export async function venderProdutos(
         }
       }
     }
-  });
+  };
+
+  if (opcoes?.tx) {
+    return executar(opcoes.tx);
+  }
+  return db.$transaction(executar);
 }

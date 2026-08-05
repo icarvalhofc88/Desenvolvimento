@@ -228,3 +228,34 @@ export type ComandaActionState =
       sucesso?: boolean;
     }
   | undefined;
+
+export const FORMAS_PAGAMENTO = [
+  "DINHEIRO",
+  "CARTAO_DEBITO",
+  "CARTAO_CREDITO",
+  "PIX",
+  "OUTRO",
+] as const;
+
+export const PagamentoInputSchema = z.object({
+  forma: z.enum(FORMAS_PAGAMENTO, { error: "Selecione a forma de pagamento." }),
+  valor: z.coerce
+    .number({ error: "Informe um valor válido." })
+    .positive({ error: "O valor deve ser maior que zero." }),
+});
+
+export const FecharComandaSchema = z.object({
+  comandaId: z.string().min(1),
+  pagamentos: z
+    .array(PagamentoInputSchema)
+    .min(1, { error: "Adicione ao menos uma forma de pagamento." }),
+});
+
+export type FecharComandaInput = z.input<typeof FecharComandaSchema>;
+
+export type FecharComandaState =
+  | {
+      erro?: string;
+      sucesso?: boolean;
+    }
+  | undefined;
