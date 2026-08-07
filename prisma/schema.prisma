@@ -54,6 +54,8 @@ model Loja {
   movimentosEstoque  MovimentoEstoque[]
   notasFiscaisCompra NotaFiscalCompra[]
   comandas           Comanda[]
+  contasPagar        ContaPagar[]
+  contasReceber      ContaReceber[]
 }
 
 model Usuario {
@@ -82,6 +84,9 @@ model Usuario {
   comandasAbertas         Comanda[]     @relation("ComandaAbertaPor")
   comandasFechadas        Comanda[]     @relation("ComandaFechadaPor")
   itensComandaAdicionados ItemComanda[]
+
+  contasPagarCriadas   ContaPagar[]   @relation("ContaPagarCriadaPor")
+  contasReceberCriadas ContaReceber[] @relation("ContaReceberCriadaPor")
 }
 
 // Registro de auditoria: toda vez que o Admin Geral entra em "modo suporte"
@@ -145,6 +150,12 @@ model Produto {
   // Preço de venda "base". Só é usado quando o produto não tem variações
   // (cada variação tem seu próprio preço).
   precoVenda Decimal? @db.Decimal(10, 2)
+
+  // Custo aproximado (o quanto custa comprar/produzir uma unidade).
+  // Opcional — usado só para estimar o lucro bruto no relatório
+  // financeiro. Sem isso cadastrado, o produto entra como "custo não
+  // informado" no relatório.
+  custoUnitario Decimal? @db.Decimal(10, 2)
 
   ativo    Boolean  @default(true)
   criadoEm DateTime @default(now())
@@ -377,4 +388,50 @@ model ItemComanda {
   criadoEm    DateTime @default(now())
   criadoPorId String?
   criadoPor   Usuario? @relation(fields: [criadoPorId], references: [id])
+}
+
+// Status genérico de uma conta financeira: ainda não vencida/paga, já
+// quitada (paga ou recebida, dependendo do tipo), ou cancelada (lançada
+// por engano).
+enum StatusConta {
+  PENDENTE
+  QUITADA
+  CANCELADA
+}
+
+// Uma despesa da loja (aluguel, fornecedor, conta de luz, etc.).
+model ContaPagar {
+  id     String @id @default(cuid())
+  lojaId String
+  loja   Loja   @relation(fields: [lojaId], references: [id])
+
+  descricao  String
+  categoria  String?
+  valor      Decimal     @db.Decimal(10, 2)
+  vencimento DateTime
+  status     StatusConta @default(PENDENTE)
+  pagoEm     DateTime?
+
+  criadoEm    DateTime @default(now())
+  criadoPorId String?
+  criadoPor   Usuario? @relation("ContaPagarCriadaPor", fields: [criadoPorId], references: [id])
+}
+
+// Uma receita esperada que não vem de uma venda no Caixa (ex: um
+// recebimento avulso, aluguel de um espaço, reembolso).
+model ContaReceber {
+  id     String @id @default(cuid())
+  lojaId String
+  loja   Loja   @relation(fields: [lojaId], references: [id])
+
+  descricao  String
+  categoria  String?
+  valor      Decimal     @db.Decimal(10, 2)
+  vencimento DateTime
+  status     StatusConta @default(PENDENTE)
+  recebidoEm DateTime?
+
+  criadoEm    DateTime @default(now())
+  criadoPorId String?
+  criadoPor   Usuario? @relation("ContaReceberCriadaPor", fields: [criadoPorId], references: [id])
 }

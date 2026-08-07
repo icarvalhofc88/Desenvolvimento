@@ -117,6 +117,12 @@ export default async function DashboardLayout({
               >
                 Usuários
               </Link>
+              <Link
+                href="/dashboard/financeiro"
+                className="text-sm text-zinc-600 hover:text-zinc-900"
+              >
+                Financeiro
+              </Link>
             </>
           )}
         </nav>

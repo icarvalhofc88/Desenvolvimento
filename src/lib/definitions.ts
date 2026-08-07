@@ -112,6 +112,7 @@ export const ProdutoFormSchema = z.object({
   }),
   vendavel: z.boolean(),
   precoVenda: z.coerce.number().nonnegative().optional(),
+  custoUnitario: z.coerce.number().nonnegative().optional(),
   estoqueMinimo: z.coerce.number().nonnegative().default(0),
   variacoes: z.array(VariacaoInputSchema).default([]),
   itensFichaTecnica: z.array(ItemFichaTecnicaInputSchema).default([]),
@@ -254,6 +255,26 @@ export const FecharComandaSchema = z.object({
 export type FecharComandaInput = z.input<typeof FecharComandaSchema>;
 
 export type FecharComandaState =
+  | {
+      erro?: string;
+      sucesso?: boolean;
+    }
+  | undefined;
+
+// Usado tanto para Contas a Pagar quanto Contas a Receber — mesma forma,
+// só muda a tabela em que a ação grava.
+export const ContaFormSchema = z.object({
+  descricao: z.string().min(2, { error: "Informe a descrição." }).trim(),
+  categoria: z.string().trim().optional(),
+  valor: z.coerce
+    .number({ error: "Informe um valor válido." })
+    .positive({ error: "O valor deve ser maior que zero." }),
+  vencimento: z.string().min(1, { error: "Informe a data de vencimento." }),
+});
+
+export type ContaFormInput = z.input<typeof ContaFormSchema>;
+
+export type ContaFormState =
   | {
       erro?: string;
       sucesso?: boolean;

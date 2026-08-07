@@ -18,6 +18,7 @@ export type ProdutoFormValores = {
   unidadeMedida: string;
   vendavel: boolean;
   precoVenda: string;
+  custoUnitario: string;
   estoqueMinimo: string;
   variacoes: VariacaoLinha[];
   itensFichaTecnica: ItemFichaLinha[];
@@ -68,6 +69,9 @@ export function ProdutoForm({
   const [estoqueMinimo, setEstoqueMinimo] = useState(
     valoresIniciais?.estoqueMinimo ?? "0"
   );
+  const [custoUnitario, setCustoUnitario] = useState(
+    valoresIniciais?.custoUnitario ?? ""
+  );
   const [variacoes, setVariacoes] = useState<VariacaoLinha[]>(
     valoresIniciais?.variacoes ?? []
   );
@@ -106,6 +110,7 @@ export function ProdutoForm({
       unidadeMedida: unidadeMedida as ProdutoFormInput["unidadeMedida"],
       vendavel,
       precoVenda: precoVenda === "" ? undefined : Number(precoVenda),
+      custoUnitario: custoUnitario === "" ? undefined : Number(custoUnitario),
       estoqueMinimo: estoqueMinimo === "" ? 0 : Number(estoqueMinimo),
       variacoes: variacoes.map((v) => ({
         nome: v.nome,
@@ -216,6 +221,21 @@ export function ProdutoForm({
             min="0"
             value={estoqueMinimo}
             onChange={(e) => setEstoqueMinimo(e.target.value)}
+            className="rounded-md border border-zinc-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900"
+          />
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label htmlFor="produto-custo" className="text-sm font-medium text-zinc-700">
+            Custo unitário (opcional, para o relatório de lucro)
+          </label>
+          <input
+            id="produto-custo"
+            type="number"
+            step="0.01"
+            min="0"
+            value={custoUnitario}
+            onChange={(e) => setCustoUnitario(e.target.value)}
             className="rounded-md border border-zinc-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900"
           />
         </div>

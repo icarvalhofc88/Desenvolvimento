@@ -13,6 +13,10 @@ financeiro, totalmente isolados dos dados de qualquer outra loja.
 ✅ **Etapa 5**: comandas por mesa e avulsas, com tela mobile (PWA) para o garçom.
 ✅ **Etapa 6**: painel da cozinha (pedidos em tempo real).
 ✅ **Etapa 7**: Caixa / PDV (fecha comanda, baixa estoque, ticket interno).
+✅ **Etapa 8**: Financeiro (contas a pagar/receber, fluxo de caixa, lucro estimado).
+
+Com isso, todos os módulos planejados inicialmente estão prontos. Novas
+etapas futuras podem ser adicionadas conforme a necessidade do negócio.
 
 ## Como o acesso é organizado
 
@@ -123,6 +127,7 @@ src/app/dashboard/estoque/   Estoque, notas fiscais de compra e ajustes
 src/app/dashboard/comandas/  Comandas por mesa/avulsas e lançamento de pedidos
 src/app/dashboard/cozinha/   Painel da cozinha (atualização automática)
 src/app/dashboard/caixa/     Histórico de vendas e fechamento de comandas
+src/app/dashboard/financeiro/  Contas a pagar/receber e fluxo de caixa
 src/lib/estoque.ts        Regras de entrada/saída de estoque, incluindo venda
 src/lib/nfe.ts            Leitor do XML de Nota Fiscal Eletrônica (NF-e)
 src/proxy.ts              "Porteiro" que barra quem não está logado
@@ -212,6 +217,29 @@ public/manifest.json      Manifesto do PWA (permite "instalar" no celular)
   serviço emissor (ex: Focus NFe), a emissão de NFC-e oficial pode ser
   encaixada aqui, ao lado do ticket interno.
 
-## Próximos módulos
+## Financeiro
 
-1. Financeiro (contas a pagar/receber, fluxo de caixa)
+- **Fluxo de caixa** por período (filtro de data "de/até", padrão: mês
+  atual): soma as vendas do Caixa, as contas a receber recebidas e as
+  contas a pagar pagas nesse intervalo, e mostra o saldo do período.
+- **Contas a pagar** e **contas a receber**: cadastro simples (descrição,
+  categoria opcional, valor, vencimento). Podem ser marcadas como
+  paga/recebida (o que registra a data e entra no fluxo de caixa),
+  desfeitas se marcadas por engano, ou canceladas antes de serem
+  quitadas. Vencidas e ainda pendentes aparecem destacadas como
+  "Atrasada".
+- **Lucro bruto estimado**: para cada produto, você pode cadastrar um
+  "custo unitário" (opcional, na tela de Produtos). O relatório calcula
+  `(preço de venda − custo) × quantidade` de tudo que foi vendido no
+  período. Produtos sem custo cadastrado ficam de fora da conta, e o
+  sistema avisa quantos itens não entraram — é uma estimativa simples
+  (custo cadastrado manualmente), não um cálculo contábil de custo médio
+  de estoque.
+- Restrito a Dono e Gerente.
+
+## Próximas ideias (fora do escopo original)
+
+- Emissão de NFC-e oficial (quando houver certificado digital e serviço
+  emissor contratado).
+- Cadastro de clientes e controle de fiado/crediário.
+- Relatórios mais detalhados (por produto, por período, exportação).
