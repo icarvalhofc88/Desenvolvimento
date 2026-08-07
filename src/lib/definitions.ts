@@ -268,6 +268,7 @@ export const FORMAS_PAGAMENTO = [
   "CARTAO_DEBITO",
   "CARTAO_CREDITO",
   "PIX",
+  "FIADO",
   "OUTRO",
 ] as const;
 
@@ -280,6 +281,7 @@ export const PagamentoInputSchema = z.object({
 
 export const FecharComandaSchema = z.object({
   comandaId: z.string().min(1),
+  clienteId: z.string().trim().optional(),
   pagamentos: z
     .array(PagamentoInputSchema)
     .min(1, { error: "Adicione ao menos uma forma de pagamento." }),
@@ -308,6 +310,23 @@ export const ContaFormSchema = z.object({
 export type ContaFormInput = z.input<typeof ContaFormSchema>;
 
 export type ContaFormState =
+  | {
+      erro?: string;
+      sucesso?: boolean;
+    }
+  | undefined;
+
+export const ClienteFormSchema = z.object({
+  nome: z.string().min(2, { error: "Informe o nome do cliente." }).trim(),
+  telefone: z.string().trim().optional(),
+  cpfCnpj: z.string().trim().optional(),
+  observacao: z.string().trim().optional(),
+  limiteCredito: z.coerce.number().nonnegative().optional(),
+});
+
+export type ClienteFormInput = z.input<typeof ClienteFormSchema>;
+
+export type ClienteFormState =
   | {
       erro?: string;
       sucesso?: boolean;

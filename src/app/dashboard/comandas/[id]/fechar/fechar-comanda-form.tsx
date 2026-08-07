@@ -10,6 +10,7 @@ const FORMAS: { valor: string; rotulo: string }[] = [
   { valor: "CARTAO_DEBITO", rotulo: "Cartão de débito" },
   { valor: "CARTAO_CREDITO", rotulo: "Cartão de crédito" },
   { valor: "PIX", rotulo: "PIX" },
+  { valor: "FIADO", rotulo: "Fiado (cliente paga depois)" },
   { valor: "OUTRO", rotulo: "Outro" },
 ];
 
@@ -22,9 +23,13 @@ function formatarMoeda(valor: number) {
 export function FecharComandaForm({
   comandaId,
   total,
+  clientes,
+  clienteIdInicial,
 }: {
   comandaId: string;
   total: number;
+  clientes: { id: string; nome: string }[];
+  clienteIdInicial?: string;
 }) {
   const router = useRouter();
   const [pendente, iniciarTransicao] = useTransition();
@@ -32,12 +37,14 @@ export function FecharComandaForm({
   const [pagamentos, setPagamentos] = useState<PagamentoLinha[]>([
     { forma: "DINHEIRO", valor: total.toFixed(2) },
   ]);
+  const [clienteId, setClienteId] = useState(clienteIdInicial ?? "");
 
   const totalPago = useMemo(
     () => pagamentos.reduce((soma, p) => soma + (Number(p.valor) || 0), 0),
     [pagamentos]
   );
   const diferenca = totalPago - total;
+  const temFiado = pagamentos.some((p) => p.forma === "FIADO");
 
   function adicionarPagamento() {
     setPagamentos((atual) => [...atual, { forma: "DINHEIRO", valor: "" }]);
@@ -60,6 +67,7 @@ export function FecharComandaForm({
     iniciarTransicao(async () => {
       const resultado = await fecharComanda({
         comandaId,
+        clienteId: clienteId || undefined,
         pagamentos: pagamentos.map((p) => ({
           forma: p.forma as FecharComandaInput["pagamentos"][number]["forma"],
           valor: Number(p.valor),
@@ -118,6 +126,32 @@ export function FecharComandaForm({
         + Dividir em outra forma de pagamento
       </button>
 
+      {temFiado && (
+        <div className="flex flex-col gap-1">
+          <label className="text-sm font-medium text-zinc-700">
+            Cliente (obrigatório para fiado)
+          </label>
+          <select
+            value={clienteId}
+            onChange={(e) => setClienteId(e.target.value)}
+            className="rounded-md border border-zinc-300 px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-zinc-900"
+          >
+            <option value="">Selecione um cliente</option>
+            {clientes.map((cliente) => (
+              <option key={cliente.id} value={cliente.id}>
+                {cliente.nome}
+              </option>
+            ))}
+          </select>
+          {clientes.length === 0 && (
+            <p className="text-xs text-amber-700">
+              Nenhum cliente cadastrado. Cadastre um em &quot;Clientes&quot;
+              antes de fiar esta venda.
+            </p>
+          )}
+        </div>
+      )}
+
       <div className="rounded-md bg-zinc-50 p-3 text-sm">
         <div className="flex justify-between">
           <span>Total da comanda</span>
@@ -143,7 +177,7 @@ export function FecharComandaForm({
 
       <button
         type="submit"
-        disabled={pendente || totalPago < total}
+        disabled={pendente || totalPago < total || (temFiado && !clienteId)}
         className="rounded-md bg-zinc-900 px-4 py-3 text-base font-medium text-white hover:bg-zinc-800 disabled:opacity-60"
       >
         {pendente ? "Fechando..." : "Confirmar fechamento"}

@@ -56,6 +56,7 @@ model Loja {
   comandas           Comanda[]
   contasPagar        ContaPagar[]
   contasReceber      ContaReceber[]
+  clientes           Cliente[]
 }
 
 model Usuario {
@@ -330,6 +331,12 @@ model Comanda {
   fechadaPorId String?
   fechadaPor   Usuario? @relation("ComandaFechadaPor", fields: [fechadaPorId], references: [id])
 
+  // Cliente da loja associado a esta comanda — obrigatório apenas quando
+  // parte do pagamento for FIADO, mas pode ser preenchido em qualquer
+  // venda para manter histórico.
+  clienteId String?
+  cliente   Cliente? @relation(fields: [clienteId], references: [id])
+
   itens      ItemComanda[]
   pagamentos Pagamento[]
 
@@ -337,11 +344,14 @@ model Comanda {
 }
 
 // Formas de pagamento aceitas no fechamento da comanda (Caixa/PDV).
+// FIADO não é dinheiro entrando agora — ao usá-la, o sistema cria uma
+// Conta a Receber para o cliente em vez de contar como venda em caixa.
 enum FormaPagamento {
   DINHEIRO
   CARTAO_DEBITO
   CARTAO_CREDITO
   PIX
+  FIADO
   OUTRO
 }
 
@@ -418,11 +428,17 @@ model ContaPagar {
 }
 
 // Uma receita esperada que não vem de uma venda no Caixa (ex: um
-// recebimento avulso, aluguel de um espaço, reembolso).
+// recebimento avulso, aluguel de um espaço, reembolso) — ou o registro de
+// uma venda fiada, quando clienteId está preenchido.
 model ContaReceber {
   id     String @id @default(cuid())
   lojaId String
   loja   Loja   @relation(fields: [lojaId], references: [id])
+
+  // Preenchido quando esta conta veio de uma venda fiada (ver Pagamento
+  // com forma FIADO em fecharComanda).
+  clienteId String?
+  cliente   Cliente? @relation(fields: [clienteId], references: [id])
 
   descricao  String
   categoria  String?
@@ -434,4 +450,27 @@ model ContaReceber {
   criadoEm    DateTime @default(now())
   criadoPorId String?
   criadoPor   Usuario? @relation("ContaReceberCriadaPor", fields: [criadoPorId], references: [id])
+}
+
+// Cliente da loja — usado para vincular comandas e, principalmente, para
+// controlar o saldo devedor de vendas fiadas.
+model Cliente {
+  id     String @id @default(cuid())
+  lojaId String
+  loja   Loja   @relation(fields: [lojaId], references: [id])
+
+  nome       String
+  telefone   String?
+  cpfCnpj    String?
+  observacao String?
+
+  // Limite de crédito para fiado. Nulo = sem limite (não recomendado,
+  // mas o dono decide).
+  limiteCredito Decimal? @db.Decimal(10, 2)
+
+  ativo    Boolean  @default(true)
+  criadoEm DateTime @default(now())
+
+  comandas      Comanda[]
+  contasReceber ContaReceber[]
 }

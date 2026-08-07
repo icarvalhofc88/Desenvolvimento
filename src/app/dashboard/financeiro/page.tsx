@@ -37,11 +37,27 @@ export default async function FinanceiroPage({
   const inicio = de ? new Date(`${de}T00:00:00`) : new Date(`${primeiroDiaDoMes()}T00:00:00`);
   const fim = ate ? new Date(`${ate}T23:59:59`) : new Date(`${hojeString()}T23:59:59`);
 
-  const [pagamentosPeriodo, contasPagarPagas, contasReceberRecebidas, itensVendidos] =
-    await Promise.all([
+  const [
+    pagamentosPeriodo,
+    pagamentosFiadoPeriodo,
+    contasPagarPagas,
+    contasReceberRecebidas,
+    itensVendidos,
+  ] = await Promise.all([
+      // FIADO não conta como venda em caixa — não é dinheiro que entrou
+      // agora, é uma dívida do cliente (vira Conta a Receber separada).
       db.pagamento.findMany({
         where: {
           criadoEm: { gte: inicio, lte: fim },
+          forma: { not: "FIADO" },
+          comanda: { lojaId: contexto.lojaId },
+        },
+        select: { valor: true },
+      }),
+      db.pagamento.findMany({
+        where: {
+          criadoEm: { gte: inicio, lte: fim },
+          forma: "FIADO",
           comanda: { lojaId: contexto.lojaId },
         },
         select: { valor: true },
@@ -80,6 +96,7 @@ export default async function FinanceiroPage({
     ]);
 
   const totalVendas = pagamentosPeriodo.reduce((s, p) => s + Number(p.valor), 0);
+  const totalFiado = pagamentosFiadoPeriodo.reduce((s, p) => s + Number(p.valor), 0);
   const totalRecebido = contasReceberRecebidas.reduce((s, c) => s + Number(c.valor), 0);
   const totalPago = contasPagarPagas.reduce((s, c) => s + Number(c.valor), 0);
   const entradas = totalVendas + totalRecebido;
@@ -160,12 +177,19 @@ export default async function FinanceiroPage({
         </button>
       </form>
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
         <div className="rounded-lg border border-zinc-200 bg-white p-4">
           <p className="text-xs text-zinc-500">Vendas (Caixa)</p>
           <p className="text-lg font-semibold text-zinc-900">
             {formatarMoeda(totalVendas)}
           </p>
+        </div>
+        <div className="rounded-lg border border-zinc-200 bg-white p-4">
+          <p className="text-xs text-zinc-500">Vendido fiado</p>
+          <p className="text-lg font-semibold text-zinc-900">
+            {formatarMoeda(totalFiado)}
+          </p>
+          <p className="text-[10px] text-zinc-400">não conta como caixa</p>
         </div>
         <div className="rounded-lg border border-zinc-200 bg-white p-4">
           <p className="text-xs text-zinc-500">Contas recebidas</p>

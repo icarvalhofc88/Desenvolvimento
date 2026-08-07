@@ -14,6 +14,7 @@ financeiro, totalmente isolados dos dados de qualquer outra loja.
 ✅ **Etapa 6**: painel da cozinha (pedidos em tempo real).
 ✅ **Etapa 7**: Caixa / PDV (fecha comanda, baixa estoque, ticket interno).
 ✅ **Etapa 8**: Financeiro (contas a pagar/receber, fluxo de caixa, lucro estimado).
+✅ **Etapa 9**: Cadastro de clientes e controle de fiado (crediário).
 
 Com isso, todos os módulos planejados inicialmente estão prontos. Novas
 etapas futuras podem ser adicionadas conforme a necessidade do negócio.
@@ -237,9 +238,35 @@ public/manifest.json      Manifesto do PWA (permite "instalar" no celular)
   de estoque.
 - Restrito a Dono e Gerente.
 
+## Clientes e Fiado
+
+- **Cadastro de clientes**: nome, telefone, CPF/CNPJ e observação
+  (todos opcionais, exceto o nome). Dono, Gerente, Caixa e Garçom podem
+  cadastrar um cliente novo na hora (ex: durante uma comanda). Só Dono e
+  Gerente definem o **limite de crédito** e podem editar ou desativar um
+  cliente.
+- **Vincular cliente à comanda**: qualquer comanda pode ter um cliente
+  associado (útil até para manter histórico), mas isso passa a ser
+  **obrigatório** quando parte do pagamento for fiado.
+- **Fiado como forma de pagamento**: no fechamento da comanda, "Fiado"
+  aparece ao lado de Dinheiro, Cartão e PIX, inclusive dividindo a conta
+  (ex: metade no cartão, metade fiado). O valor fiado **não entra como
+  dinheiro em caixa** — vira uma **conta a receber** do cliente, com
+  vencimento em 30 dias por padrão.
+- **Limite de crédito**: se o cliente tiver um limite cadastrado, o
+  sistema soma todas as contas de fiado ainda pendentes dele e bloqueia
+  o fechamento se a nova venda estourar o limite, mostrando quanto ainda
+  está disponível. Cliente sem limite cadastrado não tem esse bloqueio
+  (fica a critério do Dono/Gerente).
+- **Página do cliente**: mostra o saldo devedor atual, o histórico de
+  contas de fiado (pendentes e já recebidas) com opção de marcar como
+  recebida ali mesmo, e as últimas comandas vinculadas a ele.
+- No **Financeiro**, o fluxo de caixa separa claramente "Vendas (Caixa)"
+  de "Vendido fiado" — o fiado só volta a contar como dinheiro quando a
+  conta a receber correspondente é marcada como recebida.
+
 ## Próximas ideias (fora do escopo original)
 
 - Emissão de NFC-e oficial (quando houver certificado digital e serviço
   emissor contratado).
-- Cadastro de clientes e controle de fiado/crediário.
 - Relatórios mais detalhados (por produto, por período, exportação).

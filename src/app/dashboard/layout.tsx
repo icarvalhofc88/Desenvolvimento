@@ -97,6 +97,14 @@ export default async function DashboardLayout({
               Caixa
             </Link>
           )}
+          {podeOperarComandas && (
+            <Link
+              href="/dashboard/clientes"
+              className="text-sm text-zinc-600 hover:text-zinc-900"
+            >
+              Clientes
+            </Link>
+          )}
           {podeGerenciarUsuarios && (
             <>
               <Link

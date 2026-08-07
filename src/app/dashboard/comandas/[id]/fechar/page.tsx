@@ -23,6 +23,7 @@ export default async function FecharComandaPage({
         where: { status: { not: "CANCELADO" } },
         include: { produto: { select: { nome: true } }, variacao: { select: { nome: true } } },
       },
+      cliente: { select: { id: true, nome: true } },
     },
   });
 
@@ -41,6 +42,12 @@ export default async function FecharComandaPage({
     (soma, item) => soma + Number(item.quantidade) * Number(item.precoUnitario),
     0
   );
+
+  const clientes = await db.cliente.findMany({
+    where: { lojaId: contexto.lojaId, ativo: true },
+    orderBy: { nome: "asc" },
+    select: { id: true, nome: true },
+  });
 
   return (
     <div className="mx-auto flex w-full max-w-md flex-col gap-6">
@@ -78,7 +85,12 @@ export default async function FecharComandaPage({
 
       <div className="rounded-lg border border-zinc-200 bg-white p-4">
         <h2 className="mb-3 text-sm font-medium text-zinc-900">Pagamento</h2>
-        <FecharComandaForm comandaId={comanda.id} total={total} />
+        <FecharComandaForm
+          comandaId={comanda.id}
+          total={total}
+          clientes={clientes}
+          clienteIdInicial={comanda.cliente?.id}
+        />
       </div>
     </div>
   );
