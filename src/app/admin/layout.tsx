@@ -19,7 +19,9 @@ export default async function AdminLayout({
         </nav>
 
         <div className="flex items-center gap-3">
-          <span className="text-sm text-zinc-300">{contexto.usuario.nome}</span>
+          <Link href="/perfil" className="text-sm text-zinc-300 hover:text-white">
+            {contexto.usuario.nome}
+          </Link>
           <form action={logout}>
             <button
               type="submit"

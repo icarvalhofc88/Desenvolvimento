@@ -1,9 +1,17 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
-import { obterContexto } from "@/lib/dal";
+import { exigirContextoLoja } from "@/lib/dal";
 import { logout } from "@/app/actions/auth";
 import { sairModoSuporte } from "@/app/actions/lojas";
+import type { Perfil } from "@/generated/prisma/client";
+
+const TODOS_PERFIS_DE_LOJA: Perfil[] = [
+  "DONO",
+  "GERENTE",
+  "CAIXA",
+  "GARCOM",
+  "COZINHA",
+];
 
 const NOME_PERFIL: Record<string, string> = {
   ADMIN_GERAL: "Admin Geral",
@@ -19,15 +27,7 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const contexto = await obterContexto();
-
-  if (!contexto) {
-    redirect("/login");
-  }
-
-  if (!contexto.lojaId) {
-    redirect("/admin/lojas");
-  }
+  const contexto = await exigirContextoLoja(TODOS_PERFIS_DE_LOJA);
 
   const loja = await db.loja.findUnique({
     where: { id: contexto.lojaId },
@@ -128,12 +128,15 @@ export default async function DashboardLayout({
         </nav>
 
         <div className="flex items-center gap-3">
-          <span className="text-sm text-zinc-600">
+          <Link
+            href="/perfil"
+            className="text-sm text-zinc-600 hover:text-zinc-900"
+          >
             {contexto.usuario.nome}{" "}
             <span className="text-zinc-400">
               ({NOME_PERFIL[contexto.perfilEfetivo] ?? contexto.perfilEfetivo})
             </span>
-          </span>
+          </Link>
           {!contexto.modoSuporte && (
             <form action={logout}>
               <button

@@ -36,6 +36,39 @@ export type NovoUsuarioFormState =
     }
   | undefined;
 
+export const TrocarSenhaSchema = z
+  .object({
+    senhaAtual: z.string().min(1, { error: "Informe a senha atual." }),
+    novaSenha: z
+      .string()
+      .min(6, { error: "A nova senha deve ter pelo menos 6 caracteres." }),
+    confirmarNovaSenha: z.string(),
+  })
+  .refine((dados) => dados.novaSenha === dados.confirmarNovaSenha, {
+    error: "A confirmação não é igual à nova senha.",
+    path: ["confirmarNovaSenha"],
+  });
+
+export type TrocarSenhaState =
+  | {
+      erro?: string;
+      sucesso?: boolean;
+    }
+  | undefined;
+
+export const RedefinirSenhaSchema = z.object({
+  novaSenha: z
+    .string()
+    .min(6, { error: "A nova senha deve ter pelo menos 6 caracteres." }),
+});
+
+export type RedefinirSenhaState =
+  | {
+      erro?: string;
+      sucesso?: boolean;
+    }
+  | undefined;
+
 export const STATUS_LOJA = ["TESTE", "ATIVA", "SUSPENSA"] as const;
 
 export const NovaLojaFormSchema = z.object({

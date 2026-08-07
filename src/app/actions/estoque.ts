@@ -77,13 +77,13 @@ async function criarNotaFiscal(
     }
   }
 
-  for (const item of itens) {
-    const produto = await db.produto.findUnique({
-      where: { id: item.produtoId },
-    });
-    if (!produto || produto.lojaId !== contexto.lojaId) {
-      return { erro: "Um ou mais produtos selecionados são inválidos." };
-    }
+  const idsProdutos = [...new Set(itens.map((item) => item.produtoId))];
+  const produtos = await db.produto.findMany({
+    where: { id: { in: idsProdutos } },
+  });
+  const produtosValidos = produtos.every((p) => p.lojaId === contexto.lojaId);
+  if (produtos.length !== idsProdutos.length || !produtosValidos) {
+    return { erro: "Um ou mais produtos selecionados são inválidos." };
   }
 
   try {

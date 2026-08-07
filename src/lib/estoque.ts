@@ -23,6 +23,12 @@ export class EstoqueInsuficienteError extends Error {
 // Aplica um movimento de estoque (soma ou subtrai do produto) dentro de
 // uma transação já aberta, para garantir que o saldo do produto e o
 // registro do movimento nunca fiquem "descasados" um do outro.
+//
+// A atualização do saldo é feita com um UPDATE condicional atômico (em
+// vez de ler o saldo e depois escrever um valor calculado) para não
+// perder uma baixa quando duas vendas do mesmo produto acontecem ao
+// mesmo tempo — sem isso, as duas poderiam ler o mesmo saldo inicial e a
+// segunda escrita "por cima" apagaria o efeito da primeira.
 export async function registrarMovimento(
   tx: Prisma.TransactionClient,
   dados: {
@@ -36,25 +42,32 @@ export async function registrarMovimento(
   }
 ) {
   const ehEntrada = TIPOS_ENTRADA.includes(dados.tipo);
-  const delta = ehEntrada ? dados.quantidade : -dados.quantidade;
 
-  const produto = await tx.produto.findUniqueOrThrow({
-    where: { id: dados.produtoId },
-  });
+  if (ehEntrada) {
+    await tx.produto.update({
+      where: { id: dados.produtoId },
+      data: { estoqueAtual: { increment: dados.quantidade } },
+    });
+  } else {
+    const resultado = await tx.produto.updateMany({
+      where: {
+        id: dados.produtoId,
+        estoqueAtual: { gte: dados.quantidade },
+      },
+      data: { estoqueAtual: { decrement: dados.quantidade } },
+    });
 
-  const novoEstoque = Number(produto.estoqueAtual) + delta;
-  if (novoEstoque < 0) {
-    throw new EstoqueInsuficienteError(
-      produto.nome,
-      Number(produto.estoqueAtual),
-      dados.quantidade
-    );
+    if (resultado.count === 0) {
+      const produto = await tx.produto.findUniqueOrThrow({
+        where: { id: dados.produtoId },
+      });
+      throw new EstoqueInsuficienteError(
+        produto.nome,
+        Number(produto.estoqueAtual),
+        dados.quantidade
+      );
+    }
   }
-
-  await tx.produto.update({
-    where: { id: dados.produtoId },
-    data: { estoqueAtual: novoEstoque },
-  });
 
   await tx.movimentoEstoque.create({
     data: {

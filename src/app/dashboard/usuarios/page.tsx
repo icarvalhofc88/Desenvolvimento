@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { exigirContextoLoja } from "@/lib/dal";
 import { db } from "@/lib/db";
 import { alternarAtivoUsuario } from "@/app/actions/usuarios";
@@ -89,14 +90,22 @@ export default async function UsuariosPage() {
                 </td>
                 <td className="px-4 py-2 text-right">
                   {usuario.id !== contexto.usuario.id && (
-                    <form action={alternarAtivoUsuario.bind(null, usuario.id)}>
-                      <button
-                        type="submit"
+                    <div className="flex justify-end gap-3">
+                      <Link
+                        href={`/dashboard/usuarios/${usuario.id}/redefinir-senha`}
                         className="text-xs font-medium text-zinc-600 underline hover:text-zinc-900"
                       >
-                        {usuario.ativo ? "Desativar" : "Ativar"}
-                      </button>
-                    </form>
+                        Redefinir senha
+                      </Link>
+                      <form action={alternarAtivoUsuario.bind(null, usuario.id)}>
+                        <button
+                          type="submit"
+                          className="text-xs font-medium text-zinc-600 underline hover:text-zinc-900"
+                        >
+                          {usuario.ativo ? "Desativar" : "Ativar"}
+                        </button>
+                      </form>
+                    </div>
                   )}
                 </td>
               </tr>

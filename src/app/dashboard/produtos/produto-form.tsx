@@ -184,7 +184,16 @@ export function ProdutoForm({
           <select
             id="produto-tipo"
             value={tipo}
-            onChange={(e) => setTipo(e.target.value as "SIMPLES" | "COMPOSTO")}
+            onChange={(e) => {
+              const novoTipo = e.target.value as "SIMPLES" | "COMPOSTO";
+              setTipo(novoTipo);
+              // Produto "Simples" não tem ficha técnica — limpa os
+              // ingredientes escondidos para não enviar dados
+              // inconsistentes (e confusos) ao salvar.
+              if (novoTipo === "SIMPLES") {
+                setItensFichaTecnica([]);
+              }
+            }}
             className="rounded-md border border-zinc-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900"
           >
             <option value="SIMPLES">Simples</option>

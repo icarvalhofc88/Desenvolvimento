@@ -147,7 +147,9 @@ async function validarProduto(
   }
 
   if (itensFichaTecnica.length > 0) {
-    const idsInsumos = itensFichaTecnica.map((item) => item.insumoId);
+    const idsInsumos = [
+      ...new Set(itensFichaTecnica.map((item) => item.insumoId)),
+    ];
 
     if (produtoIdAtual && idsInsumos.includes(produtoIdAtual)) {
       return { erro: "Um produto não pode ser insumo de si mesmo." };
